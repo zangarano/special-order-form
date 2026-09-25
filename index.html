@@ -57,7 +57,7 @@
   .ack{font-size:12.5px;margin:22px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:6px}
   .sigs{display:grid;grid-template-columns:2fr 1fr;gap:28px 24px;margin-top:60px}
   .sig{border-top:1px solid var(--ink);padding-top:4px;font-size:11px;color:var(--muted)}
-  .head-grid{grid-template-columns:repeat(4,minmax(100px,1fr));min-width:min(100%,500px)}
+  .head-grid{grid-template-columns:repeat(3,minmax(100px,1fr));min-width:min(100%,420px)}
   .empty-note{color:var(--muted);font-size:13px;padding:6px 0}
   input.bad{outline:2px solid var(--danger);outline-offset:-1px}
   .bed-block{margin-top:12px;border:1.5px solid var(--ink);border-radius:6px;padding:12px 14px;break-inside:avoid}
@@ -169,15 +169,15 @@
       <div class="f"><label for="store">Store</label>
         <select id="store"><option value=""></option><option>Greece</option><option>Henrietta</option></select></div>
       <div class="f"><label for="date">Date</label><input id="date" type="date"></div>
-      <div class="f"><label for="ticket">Order Number</label><input id="ticket" inputmode="numeric" maxlength="7" placeholder="7 digits" autocomplete="off"></div>
       <div class="f"><label for="lead">Est. lead time</label><input id="lead" placeholder="Auto from brand"></div>
     </div>
   </header>
 
   <h2>Customer</h2>
   <div class="grid">
-    <div class="f s3"><label for="cname">Name</label><input id="cname" autocomplete="off" placeholder="First and last name"></div>
-    <div class="f s3"><label for="cphone">Phone</label><input id="cphone" type="tel" autocomplete="off"></div>
+    <div class="f s2"><label for="cname">Name</label><input id="cname" autocomplete="off" placeholder="First and last name"></div>
+    <div class="f s2"><label for="cphone">Phone</label><input id="cphone" type="tel" autocomplete="off"></div>
+    <div class="f s2"><label for="cemail">Email</label><input id="cemail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com"></div>
   </div>
 
   <h2>Items</h2>
@@ -504,7 +504,7 @@ function skuFields(key, uid){
     if (e.b==='La-Z-Boy' && BRANDS[e.b]){
       BRANDS[e.b].forEach(d=>g.appendChild(field(d,uid)));
     }
-    else g.appendChild(el('div',{class:'f s6 empty-note',text:'No special-order options on file for this SKU — use item notes.'}));
+    else g.appendChild(el('div',{class:'f s6 empty-note',text:'No special-order options on file for this SKU.'}));
   }
   return g;
 }
@@ -804,9 +804,8 @@ function addItem(){
 
   const brandFields = el('div',{class:'brand-fields'});
   const itemNotes = el('div',{class:'grid',style:'margin-top:10px'},[
-    field({id:'dims',label:'Dimensions (W × D × H)',span:2,placeholder:'Auto from SKU'},uid),
-    field({id:'room',label:'Room',type:'select',span:1,options:[''].concat(ROOMS)},uid),
-    field({id:'notes',label:'Item notes',span:3,type:'textarea'},uid)
+    field({id:'dims',label:'Dimensions (W × D × H)',span:3,placeholder:'Auto from SKU'},uid),
+    field({id:'room',label:'Room',type:'select',span:3,options:[''].concat(ROOMS)},uid)
   ]);
   const dimsIn = itemNotes.querySelector(`#${uid}-dims`);
   const roomIn = itemNotes.querySelector(`#${uid}-room`);
@@ -1483,7 +1482,7 @@ function renderPage2(){
   const items = [...itemsEl.querySelectorAll('.item')].map(itemSnapshot).filter(Boolean);
   host.hidden = !items.length; if (!items.length){ host.innerHTML=''; return; }
   const byRoom = new Map(); items.forEach(x=>{ if (!byRoom.has(x.room)) byRoom.set(x.room, []); byRoom.get(x.room).push(x); });
-  const nm = document.getElementById('cname').value, on = document.getElementById('ticket').value;
+  const nm = document.getElementById('cname').value, on = '';
   let html = `<div class="p2-head"><div><img class="logo p2-logo" alt="Markson&rsquo;s Furniture &amp; Mattress" src="${document.getElementById('logo').src}"><div class="doc-title" style="text-align:left">Your order, room by room</div></div>`+
     `<div class="p2-meta">${[nm && `<b>${esc(nm)}</b>`, on && `Order ${esc(on)}`].filter(Boolean).join('<br>')}</div></div>`;
   for (const room of ROOMS.concat([...byRoom.keys()].filter(r=>!ROOMS.includes(r)))){
@@ -1671,7 +1670,7 @@ function autoRoom(uid, brand, key){
    page jumps to the first one. */
 const OPTIONAL = /-(notes|dims|grade|pattern)$/;
 function requiredFields(){
-  const out = ['store','date','ticket','lead','cname','cphone'].map(id=>document.getElementById(id));
+  const out = ['store','date','lead','cname','cphone','cemail'].map(id=>document.getElementById(id));
   const items = [...itemsEl.querySelectorAll('.item')];
   const used = items.filter(it => it.querySelector('select[id$="-brand"]').value ||
     [...it.querySelectorAll('input,textarea')].some(n => n.value.trim() && !/-qty$/.test(n.id)));
@@ -1688,7 +1687,7 @@ function isMissing(n){
   if (!v || n.classList.contains('bad')) return true;
   if (/-qty$/.test(n.id)) return !(+v > 0);
   if (n.id==='cphone') return phoneDigits(v).length < 10;
-  if (n.id==='ticket') return !/^\d{7}$/.test(v);
+  if (n.id==='cemail') return !emailOK(v);
   if (n.id==='cname') return !nameOK(v);
   return false;
 }
@@ -1712,8 +1711,10 @@ function fmtPhone(v){
   ph.addEventListener('blur', ()=>{ ph.value = fmtPhone(ph.value); });
 })();
 /* Order number: exactly 7 digits (leading zeros kept, e.g. 0116431); anything else is stripped as it's typed */
-(()=>{ const t = document.getElementById('ticket'); if (!t) return;
-  t.addEventListener('input', ()=>{ const v = t.value.replace(/\D/g,'').slice(0,7); if (v!==t.value) t.value = v; });
+/* Email (Dave 9/25): required, must look like an address; trimmed and lower-cased when the rep leaves the box */
+function emailOK(v){ return /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(String(v).trim()); }
+(()=>{ const m = document.getElementById('cemail'); if (!m) return;
+  m.addEventListener('blur', ()=>{ m.value = m.value.trim().toLowerCase(); });
 })();
 /* Customer name: one box, but it needs a first AND last name (two or more words, each with a letter) */
 function nameOK(v){ return String(v).trim().split(/\s+/).filter(w=>/[A-Za-z\u00C0-\u024F]/.test(w)).length >= 2; }
@@ -1721,7 +1722,7 @@ function nameOK(v){ return String(v).trim().split(/\s+/).filter(w=>/[A-Za-z\u00C
 function whyBad(n){
   const v = (n.value||'').trim(); if (!v) return '';
   if (n.id==='cname') return 'Customer name needs a first and last name.';
-  if (n.id==='ticket') return 'Order number must be exactly 7 digits.';
+  if (n.id==='cemail') return 'Email needs to look like name@example.com.';
   if (n.id==='cphone') return 'Phone number needs all 10 digits.';
   return '';
 }
