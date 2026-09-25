@@ -1,0 +1,1779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Markson's Special Order</title>
+<style>
+  :root{
+    --bg:#f4f3f0; --paper:#ffffff; --ink:#1d1d1b; --muted:#6b6a65; --line:#d9d6cf;
+    --field:#faf9f7; --alt:#f1ede6; --accent:#850000; --accent-ink:#ffffff; --danger:#c2410c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --bg:#161614; --paper:#201f1d; --ink:#ecebe7; --muted:#a3a19b; --line:#3a3935;
+      --field:#2a2926; --alt:#2a2825; --accent:#e5736b; --accent-ink:#1d1d1b; --danger:#f59e0b;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --bg:#161614; --paper:#201f1d; --ink:#ecebe7; --muted:#a3a19b; --line:#3a3935;
+    --field:#2a2926; --alt:#2a2825; --accent:#e5736b; --accent-ink:#1d1d1b; --danger:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  .toolbar{position:sticky;top:env(safe-area-inset-top, 0px);z-index:5;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:10px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
+  button{font:inherit;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:8px 14px;border-radius:6px;cursor:pointer}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+  button.link{border:none;background:none;color:var(--danger);padding:4px 6px}
+  .sheet{max-width:850px;margin:16px auto 40px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:28px 32px}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:18px}
+  .logo{display:block;width:210px;max-width:100%;height:auto;margin-bottom:6px}
+  .p2-logo{width:150px}
+  /* the logo is dark red + black on transparent: give it a white plate on dark screens (print is always light) */
+  :root[data-theme="dark"] .logo{background:#fff;padding:6px 8px;border-radius:6px}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .logo{background:#fff;padding:6px 8px;border-radius:6px} }
+  @media print{ .logo{background:none !important;padding:0 !important} }
+  .brand{display:flex;flex-direction:column;align-items:center;width:max-content;max-width:100%}
+  .wordmark{font-size:22px;font-weight:800;letter-spacing:.5px;line-height:1.05;text-align:center}
+  .wordmark small{display:block;font-size:10px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin-top:2px}
+  .doc-title{font-size:13px;text-transform:uppercase;letter-spacing:3px;padding-left:3px;color:var(--muted);font-weight:600;text-align:center;white-space:nowrap;margin-top:6px}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin:22px 0 8px;font-weight:700}
+  .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px 12px}
+  .f{display:flex;flex-direction:column;min-width:0}
+  .s1{grid-column:span 1}.s2{grid-column:span 2}.s3{grid-column:span 3}.s4{grid-column:span 4}.s6{grid-column:span 6}
+  label{font-size:11px;color:var(--muted);margin-bottom:3px;font-weight:600;text-transform:capitalize}
+  input,select,textarea{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:5px;padding:7px 8px;width:100%}
+  textarea{resize:vertical;min-height:56px}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .item{border:1px solid var(--line);border-radius:7px;padding:14px 16px;margin-bottom:12px;break-inside:avoid}
+  .item:nth-child(even){background:var(--alt)}
+  .item-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .item-num{font-weight:700;font-size:13px}
+  .brand-fields{margin-top:10px}
+  .brand-fields:empty{display:none}
+  .hint{font-size:11px;color:var(--muted);margin-top:3px;min-height:14px}
+  .ack{font-size:12.5px;margin:22px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:6px}
+  .sigs{display:grid;grid-template-columns:2fr 1fr;gap:28px 24px;margin-top:60px}
+  .sig{border-top:1px solid var(--ink);padding-top:4px;font-size:11px;color:var(--muted)}
+  .head-grid{grid-template-columns:repeat(4,minmax(100px,1fr));min-width:min(100%,500px)}
+  .empty-note{color:var(--muted);font-size:13px;padding:6px 0}
+  input.bad{outline:2px solid var(--danger);outline-offset:-1px}
+  .bed-block{margin-top:12px;border:1.5px solid var(--ink);border-radius:6px;padding:12px 14px;break-inside:avoid}
+  .bed-title{font-size:15px;font-weight:800;margin-bottom:6px}
+  .bed-lines{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;font-size:13px}
+  .bed-lines .k{color:var(--muted);font-weight:600}
+  .bed-note{font-size:12px;margin-top:8px;color:var(--accent)}
+  .bed-parts{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}
+  .bed-parts th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--line);padding:3px 6px}
+  .bed-parts td{border-bottom:1px solid var(--line);padding:4px 6px;vertical-align:top}
+  .bed-parts td:first-child{width:36px}
+  .missing{outline:2px solid var(--danger)!important;outline-offset:-1px;background:color-mix(in srgb,var(--danger) 8%,var(--field))}
+  .f.err label{color:var(--danger)}
+  .print-msg{position:sticky;top:52px;z-index:4;max-width:850px;margin:10px auto 0;padding:9px 14px;border-radius:6px;
+    background:var(--danger);color:#fff;font-weight:600;font-size:13px}
+  .page2{margin-top:0}
+  .p2-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:6px}
+  .p2-meta{text-align:right;font-size:12px;color:var(--muted)}
+  .p2-room h3{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin:16px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px}
+  .p2-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  .p2-card{border:1px solid var(--line);border-radius:6px;padding:10px;break-inside:avoid;font-size:11.5px}
+  .p2-draw{min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;color:var(--ink)}
+  .piece-svg{max-width:100%;height:auto;overflow:visible}
+  .svg-cap{font-size:9.5px;color:var(--muted);text-align:center;margin:3px 0 6px;text-transform:uppercase;letter-spacing:.8px}
+  .p2-none{color:var(--muted);font-size:11px;border:1px dashed var(--line);padding:30px 8px;width:100%;text-align:center}
+  .p2-title{font-weight:700;font-size:12.5px}
+  .p2-sub{color:var(--muted);margin-bottom:4px}
+  .p2-opts{line-height:1.35}
+  .p2-dims{margin-top:4px;font-weight:600}
+  .p2-warn{margin-top:4px;color:var(--danger);font-size:10.5px}
+  .p2-sec{grid-column:1/-1}
+  .p2-sec .p2-draw{min-height:0;padding:6px 0}
+  .p2-pieces{margin:4px 0 4px 18px;padding:0}
+  .sec-err{border:2px solid var(--danger);color:var(--danger);border-radius:6px;padding:10px 12px;margin-bottom:8px;font-size:12.5px}
+  .sec-err ul{margin:6px 0 6px 18px;padding:0}
+  .sec-bar{margin:4px 0 8px;font-size:11.5px}
+  .sec-hint{color:var(--muted)}
+  .sec-chips{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:5px 0}
+  .sec-chip{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:14px;padding:3px 6px;background:var(--field);cursor:grab;font-weight:600;font-size:11.5px;user-select:none}
+  .sec-chip.lock{cursor:default;opacity:.8}
+  .sec-chip.dragging{opacity:.4}
+  .sec-chip .mv{border:none;background:none;padding:0 3px;font-size:10px;color:var(--muted);cursor:pointer}
+  .sec-join{color:var(--muted)}
+  .sec-flip{font-size:11.5px;padding:4px 10px}
+  .p2-foot{font-size:10px;color:var(--muted);margin-top:14px}
+  select.locked{background:transparent;border-style:dashed}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+  @media (max-width:640px){
+    .sheet{padding:18px 16px;margin:0;border-radius:0;border-left:0;border-right:0}
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .s1,.s2{grid-column:span 1}.s3,.s4,.s6{grid-column:span 2}
+    header.top{flex-direction:column;align-items:stretch}
+    .brand{align-self:center}
+    .head-grid{grid-template-columns:repeat(2,1fr);min-width:0}
+  }
+  @media print{
+    @page{size:letter;margin:0.45in}
+    :root{--bg:#fff;--paper:#fff;--ink:#000;--muted:#555;--line:#bbb;--field:#fff}
+    body{background:#fff;font-size:11.5px;line-height:1.3}
+    .toolbar,.no-print,button{display:none!important}
+    .sheet{border:none;margin:0;padding:0;max-width:none}
+    input,select,textarea{border:none;border-bottom:1px solid #999;border-radius:0;padding:2px 0;background:none;
+      -webkit-appearance:none;appearance:none;font-weight:600}
+    textarea{resize:none;min-height:0;overflow:hidden}
+    ::placeholder{color:transparent}
+    .hide-print{display:none!important}
+    .hint{display:none}
+    .item{padding:6px 10px;margin-bottom:6px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .item:nth-child(even){background:#f0f0f0}
+    .item-head{margin-bottom:4px}
+    .brand-fields{margin-top:4px}
+    h2{margin:10px 0 4px}
+    .grid{gap:4px 12px}
+    label{margin-bottom:1px;font-size:10px}
+    header.top{margin-bottom:8px;padding-bottom:6px}
+    .logo{width:190px;background:none!important;padding:0!important}
+    input::-webkit-calendar-picker-indicator{display:none}
+    input,select,textarea{outline:none!important}
+    input::-webkit-list-button{display:none!important}
+    .signoff{break-inside:avoid}
+    .bed-block{padding:6px 10px;margin-top:6px}
+    .bed-controls{display:none!important}
+    .page2{break-before:page;page-break-before:always}
+    .p2-grid{grid-template-columns:repeat(3,1fr)}
+    .p2-room h3{margin-top:10px;break-after:avoid;page-break-after:avoid}
+    .p2-room{break-inside:avoid;page-break-inside:avoid}
+    .bed-parts{margin-top:6px}
+    .ack{margin-top:14px;padding:6px 10px}
+    .sigs{margin-top:48px;gap:22px 24px}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <button class="primary" onclick="tryPrint()">Print</button>
+  <button onclick="addItem()">+ Add item</button>
+  <button onclick="clearForm()">Clear form</button>
+</div>
+
+<div id="print-msg" class="print-msg no-print" role="alert" hidden></div>
+<main class="sheet" id="sheet">
+  <header class="top">
+    <div class="brand">
+      <img class="logo" id="logo" alt="Markson's Furniture &amp; Mattress" src="data:image/png;base64,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">
+      <div class="doc-title">Special Order</div>
+    </div>
+    <div class="grid head-grid">
+      <div class="f"><label for="store">Store</label>
+        <select id="store"><option value=""></option><option>Greece</option><option>Henrietta</option></select></div>
+      <div class="f"><label for="date">Date</label><input id="date" type="date"></div>
+      <div class="f"><label for="ticket">Order Number</label><input id="ticket" inputmode="numeric" maxlength="7" placeholder="7 digits" autocomplete="off"></div>
+      <div class="f"><label for="lead">Est. lead time</label><input id="lead" placeholder="Auto from brand"></div>
+    </div>
+  </header>
+
+  <h2>Customer</h2>
+  <div class="grid">
+    <div class="f s3"><label for="cname">Name</label><input id="cname" autocomplete="off" placeholder="First and last name"></div>
+    <div class="f s3"><label for="cphone">Phone</label><input id="cphone" type="tel" autocomplete="off"></div>
+  </div>
+
+  <h2>Items</h2>
+  <div id="items"></div>
+  <div class="no-print"><button onclick="addItem()">+ Add item</button></div>
+
+  <div class="signoff">
+  <p class="ack">I have reviewed the information above and fully understand what is on this form. I understand that this order is considered a Special Order, and therefore cannot be cancelled, altered, or returned at any time for any reason. I have considered and confirmed all dimensions, including relevant delivery requirements. I agree that if something was measured incorrectly that the responsibility is mine, and Markson&#39;s Furniture will complete the delivery to the nearest open space available. The items are not returnable for any reason. All financial agreements are final, without any possibility of alterations or refunds.</p>
+
+  <div class="sigs">
+    <div class="sig">Customer Signature</div><div class="sig">Date</div>
+  </div>
+  </div>
+</main>
+<main class="sheet page2" id="page2" hidden></main>
+
+<script src="skus.js"></script>
+<script>
+/* ---------- Brand configuration: edit here to add brands or options ---------- */
+const YESNO = ['No','Yes'];
+const BRANDS = {
+  'La-Z-Boy': [
+    {id:'coverType', label:'Cover type', type:'select', span:2,
+      options:['Fabric','Select Leather','Custom Leather','Custom Leather Plus','Specialty Leather']},
+    {id:'cover', label:'Cover # + color', span:2, placeholder:'e.g. B153808', grade:true, auto:'lzb'},
+    {id:'pattern', label:'Pattern name', span:2},
+    {id:'contour', label:'Contour cushion', type:'select', span:2, options:['NO - No Contour Seat','FS - Contour Seat']},
+    {id:'wireless', label:'Remote', type:'select', span:2,
+      options:['No Remote','W2 - Remote Upgrade','LW - Left-Side Remote']},
+    {id:'swivel', label:'Swivel base', type:'select', span:2,
+      options:['NO - No Swivel Base','SW - Manual Swivel Base','SL - Power Swivel Base']},
+    {id:'handle', label:'Handle', type:'select', span:2,
+      options:['NO - Standard Handle','H1 - Arc Handle - Nickel','H3 - Arc Handle - Black','ES - Elongated Handle']},
+  ],
+  'Bassett': [
+    {id:'coverType', label:'Cover type', type:'select', span:2, options:['Fabric','Leather']},
+    {id:'cover', label:'Fabric / leather #', span:2, placeholder:'e.g. 1617-5 or 7230-18', auto:'bassett'},
+    {id:'grade', label:'Grade', span:1},
+    {id:'arm', label:'Arm style', type:'select', span:1, options:['N/A','Track Arm','Sock Arm','Thin Track Arm','Panel Arm']},
+    {id:'seat', label:'Seat cushion', type:'select', span:3,
+      options:['LOUNGE-SEAT','SUPPORT-SEAT','BLDOWN-SEAT','PREMIER-SEAT']},
+    {id:'back', label:'Back cushion', type:'select', span:3,
+      options:['LOUNGE-BACK','BLDOWN-BACK','PREMIER-BACK','N/A']},
+    {id:'nail', label:'Nailhead', type:'select', span:3, options:['NONE','ABNAIL','NKNAIL','OBNAIL']},
+    {id:'feet', label:'Feet finish', type:'select', span:3,
+      options:['BF807 WALNUT','BF008 CLOUD','BF103 ASH','BF106 SLATE','BF808 BRINDLE','BF903 Onyx','N/A']},
+  ],
+  'England': [
+    {id:'body', label:'Body fabric', span:6, placeholder:'Pattern & color / ACRO'},
+    {id:'pp1', label:'Toss pillow 1 fabric', span:3},
+    {id:'pp2', label:'Toss pillow 2 fabric', span:3},
+    {id:'ck', label:'Coil cushions (CK)', type:'select', span:2, options:YESNO},
+    {id:'fk', label:'Frame coil (FK)', type:'select', span:2, options:YESNO},
+    {id:'other', label:'Other upgrade', span:2},
+  ],
+  'Archbold': [
+    {id:'collection', label:'Collection', type:'select', span:2,
+      options:['','2 West','Alder 2 West','Alder Shaker','Chest Bed','Emmerson','Heritage','Pine','Portland','Shaker']},
+    {id:'size', label:'Bed size', type:'select', span:2, options:['N/A','Twin','Twin XL','Full','Queen','King','Cal King']},
+    {id:'finish', label:'Finish / stain', span:6},
+    {id:'hardware', label:'Hardware', span:6},
+  ],
+};
+
+/* Display text for option codes: clean names; La-Z-Boy keeps its shorthand code up front (W2, SW, H1…) */
+const PRETTY = {
+  'LOUNGE-SEAT':'Lounge Seat','SUPPORT-SEAT':'Support Seat','BLDOWN-SEAT':'Blend Down Seat','PREMIER-SEAT':'Premier Seat',
+  'LOUNGE-BACK':'Lounge Back','BLDOWN-BACK':'Blend Down Back','PREMIER-BACK':'Premier Back',
+  'NONE':'No Nailhead','ABNAIL':'Antique Brass Nailhead','NKNAIL':'Nickel Nailhead','OBNAIL':'Oiled Bronze Nailhead',
+};
+function pretty(o){
+  if (PRETTY[o]) return PRETTY[o];
+  let m = o.match(/^NO - (.+)$/); if (m) return m[1];
+  m = o.match(/^(BF\d{3}) (.+)$/);
+  if (m) return `${m[2][0].toUpperCase()}${m[2].slice(1).toLowerCase()}`;
+  m = o.match(/^([A-Z0-9]{2}) - (.+)$/);
+  if (m){ const name = m[1]==='W2' ? 'Dual Wireless Remote' : m[2].replace(' - ',', '); return `${m[1]} – ${name}`; }
+  return o;
+}
+
+/* ---------- Lead times by brand: edit here. Blank = no autofill for that brand ---------- */
+const LEAD_TIMES = {
+  'La-Z-Boy': '6–8 weeks',
+  'Bassett':  '4–6 weeks',
+  'England':  '4 weeks',
+  'Archbold': '4–6 weeks',
+  };
+
+/* Fill lead time from the brands on the order (longest wins). A rep's manual edit sticks. */
+const leadEl = document.getElementById('lead');
+let leadAuto = true;
+leadEl.addEventListener('input',()=>{ leadAuto = leadEl.value.trim()===''; });
+function maxWeeks(s){ const n = (s.match(/\d+/g)||[]).map(Number); return n.length ? Math.max(...n) : -1; }
+function updateLead(){
+  if (!leadAuto) return;
+  const times = [...document.querySelectorAll('select[id$="-brand"]')]
+    .map(s=>LEAD_TIMES[s.value]).filter(Boolean);
+  leadEl.value = times.length ? times.reduce((a,b)=> maxWeeks(b)>maxWeeks(a) ? b : a) : '';
+}
+
+/* ---------- Cover code -> cover type (and Bassett leather grade) autoselect ---------- */
+/* Beckham's cut-and-sewn covers: standard grade elsewhere, zero upcharge on the -FC frames */
+const MARRIED_BECKHAM = new Set(['1495-0','1495-2','1614-0','1614-11']);
+const LZB_TIERS = {LB:'Select Leather', BL:'Custom Leather', DL:'Custom Leather Plus',
+  FL:'Custom Leather Plus', HL:'Specialty Leather'};
+/* Bassett leather series # -> grade (Leathers 7-24-2026) */
+const BASSETT_LEATHER = {'7237':52,'7219':53,'7236':53,'7235':53,'7238':53,'7227':54,'7229':54,'7228':55,'7232':55,'7230':56};
+function setSel(id,val){
+  const s = document.getElementById(id);
+  if (s && val && [...s.options].some(o=>o.value===val)) s.value = val;
+}
+function autoCover(kind, raw, uid){
+  const v = raw.trim().toUpperCase();
+  if (kind==='lzb'){
+    const pn = document.getElementById(`${uid}-pattern`);
+    if (pn && typeof COVER_NAMES!=='undefined') pn.value = COVER_NAMES[raw.trim()] || NAME_BY_BARE[v.split(' ')[0]] || '';
+    const m = v.match(/^([A-Z]{1,2})\d/); if (!m) return;
+    setSel(`${uid}-coverType`, LZB_TIERS[m[1]] || (m[1].length===1 ? 'Fabric' : ''));
+  }
+  if (kind==='bassett'){
+    const m = v.match(/^(\d{4})/); if (!m) return;
+    const g = BASSETT_LEATHER[m[1]];
+    setSel(`${uid}-coverType`, g ? 'Leather' : 'Fabric');
+    const gr = document.getElementById(`${uid}-grade`);
+    if (!gr) return;
+    if (g){ gr.value = String(g); gr.dataset.auto = '1'; }
+    else if (gr.dataset.auto){ gr.value = ''; delete gr.dataset.auto; }
+  }
+}
+
+/* ---------- Items ---------- */
+let seq = 0;
+const itemsEl = document.getElementById('items');
+
+function el(tag, attrs={}, kids=[]){
+  const n = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)){
+    if (k==='class') n.className=v; else if (k==='text') n.textContent=v; else n.setAttribute(k,v);
+  }
+  kids.forEach(k=>n.appendChild(k));
+  return n;
+}
+
+function field(def, uid){
+  const id = `${uid}-${def.id}`;
+  const wrap = el('div',{class:`f s${def.span||2}`});
+  wrap.appendChild(el('label',{for:id,text:def.label}));
+  let input;
+  if (def.type==='select'){
+    input = el('select',{id});
+    def.options.forEach(o=>input.appendChild(el('option',{value:o,text:pretty(o)})));
+  } else if (def.type==='textarea'){
+    input = el('textarea',{id,rows:'2'});
+  } else {
+    input = el('input',{id,autocomplete:'off'});
+    if (def.placeholder) input.placeholder = def.placeholder;
+  }
+  wrap.appendChild(input);
+  if (def.grade){
+    const hint = el('div',{class:'hint'});
+    input.addEventListener('input',()=>{
+      const m = input.value.trim().toUpperCase().match(/^([A-Z]{1,2})\d/);
+      hint.textContent = m ? (LZB_TIERS[m[1]] ? `Leather tier ${m[1]}` : `Grade ${m[1]}`) : '';
+    });
+    wrap.appendChild(hint);
+  }
+  if (def.auto) input.addEventListener('input',()=>autoCover(def.auto, input.value, uid));
+  if (def.auto && typeof COVER_SETS!=='undefined'){
+    const all = brandCovers(def.auto);
+    input.setAttribute('list', `dl-all-${def.auto}`);
+    ensureList(`dl-all-${def.auto}`, dl=>[...all].sort().forEach(c=>dl.appendChild(el('option',{value:c,label:coverLabel(c)}))));
+    input.addEventListener('change',()=>{
+      const v = input.value.trim();
+      if (!v) { input.classList.remove('bad'); return; }
+      const U = v.toUpperCase();
+      const snap = all.has(v) ? v : [...all].find(c=>c.toUpperCase()===U) || [...all].find(c=>c.split(' ')[0].toUpperCase()===U);
+      if (snap){ input.value = snap; input.classList.remove('bad'); autoCover(def.auto, snap, uid); return; }
+      input.value=''; input.classList.add('bad');
+      const h = wrap.querySelector('.hint') || wrap.appendChild(el('div',{class:'hint'}));
+      h.textContent = `⚠ ${v} isn't a real cover — cleared`;
+    });
+  }
+  return wrap;
+}
+
+/* ---------- SKU-driven options (data in skus.js — no prices) ---------- */
+const NAME_BY_BARE = {};
+if (typeof COVER_NAMES!=='undefined') for (const k in COVER_NAMES) NAME_BY_BARE[k.split(' ')[0].toUpperCase()] = COVER_NAMES[k];
+function coverName(c){ return (typeof COVER_NAMES!=='undefined' && COVER_NAMES[c]) || ''; }
+function coverLabel(c){ const g = COVER_GRADES[c] ? gradeText(COVER_GRADES[c]) : (/^[A-Z]\d/.test(c) ? `Grade ${c[0]}` : ''); return [coverName(c), g].filter(Boolean).join(' · '); }
+function brandCovers(kind){
+  const out = new Set(); const brand = kind==='lzb' ? 'La-Z-Boy' : 'Bassett';
+  const ids = new Set(Object.values(SKUS).filter(e=>e.b===brand && e.c!==undefined).map(e=>e.c));
+  ids.forEach(i=>COVER_SETS[i].forEach(c=>out.add(c)));
+  return out;
+}
+const HAS_SKUS = typeof SKUS !== 'undefined';
+const OPT_LABELS = {ContourSeat:'Contour cushion', SwivelBase:'Swivel base', Handle:'Handle',
+  RemoteChoice:'Remote', WirelessRemote:'Remote', BassettCushio:'Seat cushion', BassettBack:'Back cushion',
+  BassettNail:'Nailhead', BassettFeet:'Feet finish',
+  Finish:'Finish', Hardware:'Hardware', Fabric:'Headboard fabric',
+  EngCushion:'Seat cushion', EngFrame:'Frame'};
+/* England leather covers carry a tier word instead of a grade letter */
+const isTier = g => /^(Prime|Choice|Select)$/.test(g||'');
+const gradeText = g => g ? (isTier(g) ? `${g} leather` : `Grade ${g}`) : '';
+const SKU_INDEX = {};
+if (HAS_SKUS) Object.keys(SKUS).forEach(k=>SKU_INDEX[k.toUpperCase().replace(/[^A-Z0-9]/g,'')] = k);
+function findSku(v, brand){
+  const k = HAS_SKUS ? SKU_INDEX[v.toUpperCase().replace(/[^A-Z0-9]/g,'')] : null;
+  return k && (!brand || SKUS[k].b===brand) ? k : null;
+}
+
+/* shared datalists, built once */
+function ensureList(id, build){
+  if (document.getElementById(id)) return;
+  const dl = el('datalist',{id}); build(dl); document.body.appendChild(dl);
+}
+/* SKU dropdown: all brands until a brand is picked, then that brand only */
+function skuList(brand){
+  const id = brand ? `dl-skus-${brand.replace(/[^A-Za-z0-9]/g,'')}` : 'dl-skus';
+  ensureList(id, dl=>Object.entries(SKUS).forEach(([k,e])=>{
+    if (!brand || e.b===brand) dl.appendChild(el('option',{value:k,label:[e.b,e.d].filter(Boolean).join(' · ')}));
+  }));
+  return id;
+}
+function coverList(i){
+  ensureList(`dl-cov-${i}`, dl=>COVER_SETS[i].forEach(c=>dl.appendChild(el('option',{value:c,label:coverLabel(c)}))));
+  return `dl-cov-${i}`;
+}
+function lzbTier(code){ const m = code.toUpperCase().match(/^([A-Z]{1,2})\d/); return m ? (LZB_TIERS[m[1]] || (m[1].length===1?'Fabric':'')) : ''; }
+
+/* Render the fields one specific SKU allows */
+function skuFields(key, uid){
+  const e = SKUS[key]; const g = el('div',{class:'grid'});
+  /* Archbold: collection/size locked from the name, then its own finish/hardware/fabric pick-lists */
+  if (e.b==='Archbold'){
+    /* a bed SKU hands the item to the bed builder, which asks for the remaining parts */
+    if (bedContexts(key).length) return bedBuilder(key, e, uid);
+    archboldFields(key, e, uid).forEach(f=>g.appendChild(f)); return g;
+  }
+  if (e.c !== undefined){
+    const set = COVER_SETS[e.c];
+    let types;
+    if (e.b==='La-Z-Boy'){ const have = new Set(set.map(lzbTier)); types = BRANDS['La-Z-Boy'][0].options.filter(t=>have.has(t)); }
+    else types = [set.some(c=>COVER_GRADES[c] && (+COVER_GRADES[c]>=50 || isTier(COVER_GRADES[c]))) ? 'Leather' : 'Fabric'];
+    g.appendChild(field({id:'coverType',label:'Cover type',type:'select',span:e.b==='La-Z-Boy'?2:1,options:types},uid));
+    /* Cover: type-ahead from this SKU's real covers only; anything else is rejected */
+    const cw = field({id:'cover',label: e.b==='La-Z-Boy' ? 'Cover # + color' : (types[0]==='Leather'?'Leather #':'Fabric #'),span:2,
+      placeholder:'Code or pattern…'},uid);
+    const cin = cw.querySelector('input'); cin.setAttribute('list', coverList(e.c));
+    const hint = el('div',{class:'hint'}); cw.appendChild(hint);
+    const gradeOf = c => e.b==='La-Z-Boy' ? (LZB_TIERS[c.slice(0,2)] ? LZB_TIERS[c.slice(0,2)] : `Grade ${c[0]}`) : gradeText(COVER_GRADES[c]);
+    const bare = c => c.split(' ')[0].toUpperCase();
+    /* Accept the full "CODE Pattern" string, the bare code on its own, or any unambiguous prefix */
+    const find = v => {
+      const u = v.trim().toUpperCase(); if (!u) return null;
+      const exact = set.find(c=>c.toUpperCase()===u); if (exact) return exact;
+      const b = set.filter(c=>bare(c)===u); if (b.length===1) return b[0];
+      const p = set.filter(c=>c.toUpperCase().startsWith(u));
+      return p.length===1 ? p[0] : null;
+    };
+    function resolve(){
+      const v = cin.value.trim();
+      cin.classList.remove('bad'); hint.textContent='';
+      const gi=document.getElementById(`${uid}-grade`); if (gi) gi.value='';
+      const pn0=document.getElementById(`${uid}-pattern`); if (pn0) pn0.value='';
+      if (!v) return null;
+      const hit = find(v);
+      if (hit){
+        const free = /^2676-.*FC$/.test(key) && MARRIED_BECKHAM.has(bare(hit));
+        hint.textContent = [coverName(hit), free ? 'No upcharge — married fabric' : gradeOf(hit)].filter(Boolean).join(' · ');
+        const pn=document.getElementById(`${uid}-pattern`); if (pn) pn.value = coverName(hit);
+        if (e.b==='La-Z-Boy') setSel(`${uid}-coverType`, lzbTier(hit));
+        else if (gi) gi.value = free ? '0' : (COVER_GRADES[hit]||'');
+        return hit;
+      }
+      const U = v.toUpperCase();
+      const n = set.filter(c=>c.toUpperCase().startsWith(U) || bare(c).startsWith(U)).length;
+      if (n){ hint.textContent = `${n} match${n>1?'es':''}`; }
+      else { hint.textContent = '⚠ Not an option on this SKU'; cin.classList.add('bad'); }
+      return null;
+    }
+    cin.addEventListener('input', resolve);
+    cin.addEventListener('change',()=>{
+      const v = cin.value.trim(); if (!v){ resolve(); return; }
+      const hit = find(v);
+      if (hit){ cin.value = hit; resolve(); return; }
+      /* An ambiguous prefix is half-typed, not wrong — keep it and say how many match. */
+      const U = v.toUpperCase();
+      const n = set.filter(c=>c.toUpperCase().startsWith(U) || bare(c).startsWith(U)).length;
+      if (n){ resolve(); hint.textContent = `${n} matches — keep typing or pick one`; return; }
+      cin.value=''; resolve(); cin.classList.add('bad'); hint.textContent = `⚠ ${v} isn't offered on this SKU — cleared`;
+    });
+    g.appendChild(cw);
+    g.appendChild(field({id:'pattern',label: e.b==='La-Z-Boy' ? 'Pattern name' : 'Pattern · color',span:2},uid));
+    if (e.b!=='La-Z-Boy') g.appendChild(field({id:'grade',label:'Grade',span:1},uid));
+  }
+  /* England toss pillows: one fabric pick per pillow, from the pillow-eligible list (no leather/vinyl) */
+  if (e.p && typeof ENG_PILLOW_SET!=='undefined'){
+    const pset = COVER_SETS[ENG_PILLOW_SET];
+    for (let i=1;i<=e.p;i++){
+      const pw = field({id:`pillow${i}`,label:`Toss pillow ${i} fabric`,span:2,placeholder:'ACRO or pattern…'},uid);
+      const pin = pw.querySelector('input'); pin.setAttribute('list', coverList(ENG_PILLOW_SET));
+      const ph = el('div',{class:'hint'}); pw.appendChild(ph);
+      pin.addEventListener('change',()=>{
+        const v = pin.value.trim(); pin.classList.remove('bad'); ph.textContent='';
+        if (!v) return;
+        const u = v.toUpperCase();
+        const hit = pset.find(c=>c.toUpperCase()===u) || pset.find(c=>c.split(' ')[0].toUpperCase()===u)
+          || (pset.filter(c=>c.toUpperCase().startsWith(u)).length===1 ? pset.find(c=>c.toUpperCase().startsWith(u)) : null);
+        if (hit){ pin.value = hit; ph.textContent = gradeText(COVER_GRADES[hit]); return; }
+        pin.value=''; pin.classList.add('bad'); ph.textContent = `⚠ ${v} isn't a pillow fabric — cleared`;
+      });
+      g.appendChild(pw);
+    }
+  }
+  Object.entries(e.o||{}).forEach(([t,codes])=>{
+    g.appendChild(field({id:`opt-${t}`,label:OPT_LABELS[t]||t,type:'select',span:2,options:codes},uid));
+  });
+  if (!g.children.length){
+    /* No SKU-level data: fall back to the brand's general fields for La-Z-Boy only.
+       Bassett pieces with no data are fixed-cover; England ones are -STK stock pieces, tables,
+       discontinued (Purchase Status D) or vendor-model rows — none take special-order options. */
+    if (e.b==='La-Z-Boy' && BRANDS[e.b]){
+      BRANDS[e.b].forEach(d=>g.appendChild(field(d,uid)));
+    }
+    else g.appendChild(el('div',{class:'f s6 empty-note',text:'No special-order options on file for this SKU — use item notes.'}));
+  }
+  return g;
+}
+
+/* ---------- Archbold: the description already decides collection and bed size ----------
+   Every Archbold description that names a size is bed hardware, and nothing else names one,
+   so the name is authoritative: a bookcase gets no size field, and a Queen headboard can only
+   be Queen. Only genuinely size-agnostic bed hardware (adjustable-base rails) gets the picker.
+   Finish, hardware and headboard fabric come from skus.js (Storis types Finish / Hardware /
+   Fabric), so each SKU offers only what it takes: handles on 2 West, two-tone on Portland,
+   fabric on the Modern Platform bed. Each list starts blank so nothing prints unless the rep picks it.
+   Lists reflect the 2027 price book: 15 stains, 13 paints, 15 two-tone, 10 knobs, 3 handles, 16 fabrics. */
+const ARCH_SIZES = ['Cal King','Twin XL','King','Queen','Full','Twin'];
+const ARCH_COLS = BRANDS.Archbold[0].options.filter(Boolean).slice().sort((a,b)=>b.length-a.length);
+const ARCH_ANY_SIZE = new Set(['612992']);   // "Compatible Rails for Adjustable Bases"
+const ARCH_NO_OPTS = /Slats|Spacer Kit/;      // ship unfinished — nothing to choose
+function archboldFields(key, e, uid){
+  const out = [];
+  const col  = ARCH_COLS.find(c => e.d.startsWith(c + ' ')) || '';
+  const size = (e.d.match(/\b(Cal King|Twin XL|King|Queen|Full|Twin)\b/) || [])[1] || '';
+  const anySize = ARCH_ANY_SIZE.has(key);
+  const o = e.o || {};
+
+  /* Collection: locked to the one the SKU names, otherwise the full list */
+  out.push(field({id:'collection', label:'Collection', type:'select', span:2,
+    options: col ? [col] : BRANDS.Archbold[0].options}, uid));
+
+  /* Bed size: only for bed hardware. Named size = locked; size-agnostic rails = full picker. */
+  if (size)      out.push(field({id:'size', label:'Bed size', type:'select', span:2, options:[size]}, uid));
+  else if (anySize) out.push(field({id:'size', label:'Bed size', type:'select', span:2,
+    options: [''].concat(ARCH_SIZES)}, uid));   // fits any size — the rep must say which
+
+  const pick = (t, span) => out.push(field({id:`opt-${t}`, label:OPT_LABELS[t], type:'select', span,
+    options: [''].concat(o[t])}, uid));
+  if (o.Finish)  pick('Finish', 2);
+  if (o.Hardware)   pick('Hardware', 2);
+  if (o.Fabric)  pick('Fabric', 2);
+  /* Slats and spacer kits ship unfinished, so they take nothing. Anything else with no
+     option data keeps free text rather than silently offering nothing. */
+  if (!o.Finish && !ARCH_NO_OPTS.test(e.d)){
+    out.push(field({id:'finish',   label:'Finish / stain', span: (size||anySize) ? 2 : 4}, uid));
+    out.push(field({id:'hardware', label:'Hardware', span:6}, uid));
+  }
+  return out;
+}
+
+/* ---------- Archbold bed builder (data: BEDS in skus.js, from the 2027 price list; no prices) ----------
+   Lives inside Archbold: typing a bed SKU (set, headboard, footboard, chest or storage part) hands the
+   item to the builder with that SKU locked in, and it immediately asks for the remaining parts —
+   offering only what can legally go with it: sizes the style is made in, tall/low pedestal pairing,
+   Cal King chest beds tall-only, adjustable-base rails Queen/King only, spacer kits on all but Twin.
+   The block prints in plain words for the customer; the part lines underneath are for ordering. */
+const BT = {SET:'Complete bed', MIX:'Bed with a different footboard', CHEST:'Shaker chest bed', STOR:'Elevated storage bed', ONE:'This piece only'};
+const code = o => (o||'').split(' - ')[0];
+const optName = o => (o||'').split(' - ').slice(1).join(' - ');
+function partName(k){
+  const d = (SKUS[k]||{}).d || k;
+  return d.replace(/^(Chest Bed|Shaker|Heritage|Emmerson|2 West|Portland|Alder 2 West|Alder Shaker)\s+/,'')
+          .replace(/\b(Cal[- ]King|Twin XL|Queen\/King|Twin|Full|Queen|King)\s+/,'').replace(/\s+Tall$/,'').trim();
+}
+function inchTxt(x){ if (typeof x!=='number') return x; const w=Math.floor(x), e=Math.round((x-w)*8);
+  if (!e) return String(w); if (e===8) return String(w+1); let n=e,d=8; while(n%2===0){n/=2;d/=2;} return `${w} ${n}/${d}`; }
+
+/* Every way a SKU can start a bed: [{type, size, style|hb|fb|p1, height}] */
+function bedContexts(k){
+  if (typeof BEDS==='undefined') return [];
+  const out = [];
+  /* a complete set, or a headboard / footboard that belongs to a style, can finish as that style's bed */
+  BEDS.styles.forEach((s,i)=>Object.entries(s.sizes).forEach(([z,r])=>{
+    if ((r.p.includes(k) && !/Rails|Slats/.test((SKUS[k]||{}).d||'')) || (s.hb||{})[z]===k || (s.fb||{})[z]===k) out.push({type:BT.SET, size:z, style:String(i)}); }));
+  for (const [z,l] of Object.entries(BEDS.hb)) if (z!=='Cal King' && l.includes(k)) out.push({type:BT.MIX, size:z, hb:k});
+  for (const [z,l] of Object.entries(BEDS.fb)) if (z!=='Cal King' && l.includes(k)) out.push({type:BT.MIX, size:z, fb:k});
+  const C = BEDS.chest;
+  for (const [z,d] of Object.entries(C.ped)) for (const [h,l] of Object.entries(d)) if (l.includes(k)) out.push({type:BT.CHEST, size:z, height:h, p1:k});
+  for (const [z,d] of Object.entries(C.hb))  for (const [h,l] of Object.entries(d)) if (l.includes(k)) out.push({type:BT.CHEST, size:z, height:h, hb:k});
+  for (const [z,d] of Object.entries(C.fb))  for (const [h,l] of Object.entries(d)) if (l.includes(k)){
+    out.push({type:BT.CHEST, size:z, height:h, fb:k});
+    if (h==='Tall' && (C.ped[z]||{}).Low) out.push({type:BT.CHEST, size:z, height:'Low', fb:k});  // tall Shaker FB also fits low pedestals
+  }
+  const E = BEDS.stor;
+  for (const [z,l] of Object.entries(E.hb))  if (l.includes(k)) out.push({type:BT.STOR, size:z, hb:k});
+  for (const [z,l] of Object.entries(E.fb))  if (l.includes(k)) out.push({type:BT.STOR, size:z, fb:k});
+  for (const [z,l] of Object.entries(E.ped)) if (l.includes(k)) out.push({type:BT.STOR, size:z, p1:k});
+  return out;
+}
+
+function bedBuilder(key, e, uid){
+  const wrap = el('div');
+  const controls = el('div',{class:'grid bed-controls'});
+  const out = el('div');
+  wrap.append(controls, out);
+  const ctxs = bedContexts(key);
+  const types = [...new Set(ctxs.map(c=>c.type))].concat([BT.ONE]);
+  const st = {type:types[0], style:'', size:'', rails:'', height:'', hb:'', fb:'', p1:'', p2:'', finish:'', hw:'', fab:''};
+  const descEl = () => document.getElementById(`${uid}-desc`);
+  const dimsEl = () => document.getElementById(`${uid}-dims`);
+
+  /* the contexts that still apply given the type (and size, once chosen) */
+  const live = () => ctxs.filter(c=>c.type===st.type && (!st.size || c.size===st.size));
+  function sel(k, label, opts, span, blank=true){
+    /* lock to the seeded SKU's context where it pins this field */
+    const pins = k==='type' ? new Set() : new Set(ctxs.filter(c=>c.type===st.type && (k==='size' || !st.size || c.size===st.size)).map(c=>c[k]).filter(Boolean));
+    if (pins.size) opts = opts.filter(o=>pins.has(o[0]));
+    if (opts.length===1) blank = false;
+    if (!opts.some(o=>o[0]===st[k])) st[k] = (!blank && opts.length) ? opts[0][0] : '';
+    const w = el('div',{class:`f s${span}`});
+    const s = el('select',{id:`${uid}-bed-${k}`});
+    if (blank) s.appendChild(el('option',{value:'',text:''}));
+    opts.forEach(([v,t])=>s.appendChild(el('option',{value:v,text:t})));
+    s.value = st[k];
+    if (opts.length===1 && pins.size) s.classList.add('locked');
+    s.addEventListener('change',()=>{ st[k]=s.value; render(); });
+    w.append(el('label',{for:s.id,text:label}), s);
+    controls.appendChild(w);
+  }
+  const skuOpts = list => (list||[]).map(k=>[k, `${partName(k)} (${k})`]);
+  const SIZES = ['Twin','Full','Queen','King','Cal King'];
+  const QK = z => z==='Queen' || z==='King';
+
+  function render(){
+    controls.innerHTML=''; out.innerHTML='';
+    sel('type','Build as', types.map(t=>[t,t]), 3, false);
+    const T = st.type; let parts = [], title = '', lines = [], dims = '', note = '';
+    if (T===BT.ONE){
+      /* plain single piece: the normal Archbold fields */
+      const g = el('div',{class:'grid'}); archboldFields(key, e, uid).forEach(f=>g.appendChild(f)); out.appendChild(g);
+      descEl().value = e.d; const v = DIMS[key];
+      dimsEl().value = v ? `${inchTxt(v[0])}"W × ${inchTxt(v[1])}"D × ${inchTxt(v[2])}"H${v[3]==='bed'?' (assembled bed)':''}` : '';
+      return;
+    }
+    if (T===BT.SET){
+      sel('style','Style', BEDS.styles.map((s,i)=>[String(i), s.n + (s.ft ? ` — ${s.ft}` : '')]), 3);
+      const S = st.style!=='' ? BEDS.styles[+st.style] : null;
+      if (S) sel('size','Size', SIZES.filter(z=>S.sizes[z]).map(z=>[z,z]), 2);
+      if (S && st.size){
+        const z = st.size, rec = S.sizes[z];
+        const r = [];
+        if (S.rails==='either') r.push(['plat','Platform rails + slats'],['std','Standard rails']);
+        else if (S.rails==='std') r.push(['std','Standard rails']);
+        else r.push(['plat','Platform rails + slats']);
+        if (S.rails!=='plat' && QK(z)) r.push(['adj','Rails for an adjustable base']);
+        sel('rails','Rails', r, 3, false);
+        parts = rec.p.filter(k=>!/Rails|Slats/.test((SKUS[k]||{}).d||'')).concat(railParts(z, st.rails));
+        title = `${z} ${S.n} Bed` + (S.ft ? `, ${S.ft}` : '');
+        dims = `${inchTxt(rec.d[0])}"W × ${inchTxt(rec.d[1])}"L × ${inchTxt(rec.d[2])}"H (assembled bed)`;
+        if (!parts.includes(key) && parts[0] && !/Rails|Slats/.test(e.d))
+          note = `${key} is part of this bed — ordered as the boxed headboard & footboard set ${parts[0]}.`;
+        lines.push(['Rails', railText(st.rails)]);
+      }
+    }
+    else if (T===BT.MIX){
+      /* Build-A-Bed in the book covers Twin–King only (no Cal King footboards or side rails listed) */
+      sel('size','Size', SIZES.filter(z=>z!=='Cal King' && BEDS.hb[z].length && BEDS.fb[z].length).map(z=>[z,z]), 2);
+      const z = st.size;
+      if (z){
+        sel('hb','Headboard', skuOpts(BEDS.hb[z]), 3);
+        sel('fb','Footboard', skuOpts(BEDS.fb[z]), 3);
+        const r = [['std','Standard rails'],['plat','Platform rails + slats']];
+        if (QK(z)) r.push(['adj','Rails for an adjustable base']);
+        sel('rails','Rails', r, 3, false);
+        if (st.hb && st.fb){
+          const boxed = BEDS.boxed[`${st.hb}|${st.fb}`];
+          parts = (boxed ? [boxed] : [st.hb, st.fb]).concat(railParts(z, st.rails));
+          if (boxed) note = `Matching headboard & footboard — ordered as boxed set ${boxed}, Archbold's most cost-effective option.`;
+          title = `${z} Custom Bed`;
+          lines.push(['Headboard', partName(st.hb)], ['Footboard', partName(st.fb)], ['Rails', railText(st.rails)]);
+          dims = hbDims(st.hb, st.fb);
+        }
+      }
+    }
+    else if (T===BT.CHEST){
+      const C = BEDS.chest;
+      sel('size','Size', SIZES.filter(z=>C.ped[z]).map(z=>[z,z]), 2);
+      const z = st.size;
+      if (z){
+        sel('height','Height', Object.keys(C.ped[z]).filter(h=>(C.hb[z]||{})[h]).map(h=>[h,h]), 2, false);
+        const h = st.height;
+        sel('p1','Pedestal 1', skuOpts(C.ped[z][h]), 3);
+        sel('p2','Pedestal 2', skuOpts(C.ped[z][h]), 3);
+        sel('hb','Headboard', skuOpts(C.hb[z][h]), 3);
+        /* tall Shaker footboards pair with either height; low footboards only with low pedestals */
+        sel('fb','Footboard', skuOpts((C.fb[z].Tall||[]).concat(h==='Low' ? (C.fb[z].Low||[]) : [])), 3);
+        if (st.p1 && st.p2 && st.hb && st.fb){
+          const sp = z==='Twin' ? null : (C.spacer[`${z}|${h}`] || C.spacer[z]);
+          parts = [st.hb, st.fb, st.p1, st.p2].concat(sp ? [sp] : []);
+          title = `${z} Shaker Chest Bed, ${h.toLowerCase()}`;
+          lines.push(['Headboard', partName(st.hb)], ['Footboard', partName(st.fb)], ['Storage', pedText(st.p1, st.p2)]);
+          dims = storDims(st.hb, st.p1);
+        }
+      }
+    }
+    else if (T===BT.STOR){
+      const E = BEDS.stor;
+      sel('size','Size', SIZES.filter(z=>(E.ped[z]||[]).length && (E.hb[z]||[]).length).map(z=>[z,z]), 2);
+      const z = st.size;
+      if (z){
+        sel('hb','Headboard', skuOpts(E.hb[z]), 3);
+        sel('fb','Footboard', skuOpts(E.fb[z]), 3);
+        sel('p1','Pedestal 1', skuOpts(E.ped[z]), 3);
+        sel('p2','Pedestal 2', skuOpts(E.ped[z]), 3);
+        if (st.hb && st.fb && st.p1 && st.p2){
+          const boxed = BEDS.boxed[`${st.hb}|${st.fb}`];
+          const sp = z==='Twin' ? null : E.spacer[z];
+          parts = (boxed ? [boxed] : [st.hb, st.fb]).concat([st.p1, st.p2]).concat(sp ? [sp] : []);
+          if (boxed) note = `Matching headboard & footboard — ordered as boxed set ${boxed}, Archbold's most cost-effective option.`;
+          title = `${z} Elevated Storage Bed`;
+          lines.push(['Headboard', partName(st.hb)], ['Footboard', partName(st.fb)], ['Storage', pedText(st.p1, st.p2)]);
+          dims = storDims(st.hb, st.p1);
+        }
+      }
+    }
+    /* finish from the headboard / set; knobs and fabric only if a part takes them */
+    const opt = t => { for (const k of parts){ const o=(SKUS[k]||{}).o||{}; if (o[t]) return o[t]; } return null; };
+    if (parts.length){
+      const fin = ((SKUS[parts[0]]||{}).o||{}).Finish || opt('Finish');
+      if (fin) sel('finish','Finish', fin.map(o=>[o, optName(o)]), 2);
+      const hw = opt('Hardware'); if (hw) sel('hw','Knobs', hw.map(o=>[o, optName(o)]), 2); else st.hw='';
+      const fab = opt('Fabric'); if (fab) sel('fab','Headboard fabric', fab.map(o=>[o, optName(o)]), 2); else st.fab='';
+      if (st.finish) lines.push(['Finish', optName(st.finish)]);
+      if (st.hw) lines.push(['Knobs', optName(st.hw)]);
+      if (st.fab) lines.push(['Headboard fabric', optName(st.fab)]);
+      lines.push(['Size', dims]);
+      out.appendChild(bedBlock(title, lines, parts, note));
+    }
+    descEl().value = title || e.d;
+    dimsEl().value = '';   // the bed block carries the size; avoid printing it twice
+  }
+
+  function railParts(z, r){ return r==='adj' ? [BEDS.adj] : r==='plat' ? (BEDS.plat[z] || []) : [BEDS.std[z]]; }
+  function railText(r){ return r==='adj' ? 'For an adjustable base (no slats or center support)' : r==='plat' ? 'Platform rails with slats — no box spring needed' : 'Standard rails'; }
+  function pedText(a,b){
+    const n = k => partName(k).replace(/^(Queen\/King|Cal King)\s+/,'').replace(/(\d) Drawer/,'$1-drawer').replace(/ Pedestal$/,' pedestal')
+      .replace(/^Blank/,'blank').replace(/ Low /,' low ');
+    return a===b ? `Two ${n(a)}s` : `${n(a)} + ${n(b)}`; }
+  function hbDims(h,f){ const H=DIMS[h], F=DIMS[f]; if (!H) return '';
+    return `Headboard ${inchTxt(H[0])}"W × ${inchTxt(H[2])}"H` + (F ? ` · footboard ${inchTxt(F[2])}"H` : ''); }
+  function storDims(h,p){ const H=DIMS[h], P=DIMS[p]; if (!H) return '';
+    return `Headboard ${inchTxt(H[0])}"W × ${inchTxt(H[2])}"H` + (P ? ` · pedestals ${inchTxt(P[1])}"L × ${inchTxt(P[2])}"H` : ''); }
+
+  /* Archbold order # = base + finish + -knob / -fabric. Parts that don't take two-tone
+     (rails, pedestals) get the main stain: NSW -> N. */
+  function orderCode(k){
+    const o = (SKUS[k]||{}).o || {}; let c = k;
+    if (o.Finish){
+      if (!st.finish) c += '·';
+      else {
+        const f = code(st.finish);
+        c += o.Finish.some(x=>code(x)===f) ? f : (/^[A-Z]SW$/.test(f) ? f[0] : f);
+      }
+    }
+    if (o.Hardware && st.hw) c += '-' + code(st.hw);
+    if (o.Fabric && st.fab) c += '-' + code(st.fab);
+    return c;
+  }
+  function bedBlock(title, lines, parts, note){
+    const b = el('div',{class:'bed-block'}); b.dataset.parts = JSON.stringify(parts);
+    b.appendChild(el('div',{class:'bed-title',text:title}));
+    const dl = el('div',{class:'bed-lines'});
+    lines.filter(l=>l[1]).forEach(([k,v])=>dl.append(el('span',{class:'k',text:k}), el('span',{text:v})));
+    b.appendChild(dl);
+    if (note) b.appendChild(el('div',{class:'bed-note',text:note}));
+    const qty = new Map(); parts.forEach(k=>qty.set(k,(qty.get(k)||0)+1));
+    const t = el('table',{class:'bed-parts'});
+    t.appendChild(el('tr',{},[el('th',{text:'Qty'}),el('th',{text:'Order #'}),el('th',{text:'Part'})]));
+    [...qty.keys()].forEach(k=>t.appendChild(el('tr',{},[el('td',{text:String(qty.get(k))}),
+      el('td',{class:'mono',text:orderCode(k)}), el('td',{text:(SKUS[k]||{}).d||k})])));
+    b.appendChild(t);
+    return b;
+  }
+  render();
+  return wrap;
+}
+
+function addItem(){
+  const uid = `i${++seq}`;
+  const box = el('section',{class:'item'});
+  const head = el('div',{class:'item-head'},[ el('span',{class:'item-num'}) ]);
+  const rm = el('button',{class:'link',type:'button',text:'Remove'});
+  rm.onclick = ()=>{ box.remove(); renumber(); updateLead(); queuePage2(); };
+  head.appendChild(rm);
+
+  const brandSel = el('select',{id:`${uid}-brand`});
+  brandSel.appendChild(el('option',{value:'',text:'Select brand…'}));
+  Object.keys(BRANDS).forEach(b=>brandSel.appendChild(el('option',{value:b,text:b})));
+
+  const styleWrap = field({id:'style',label:'Style / SKU',span:1,placeholder:HAS_SKUS?'Type SKU or name':''},uid);
+  const styleIn = styleWrap.querySelector('input');
+  if (HAS_SKUS) styleIn.setAttribute('list', skuList());
+  const base = el('div',{class:'grid'},[
+    el('div',{class:'f s1'},[el('label',{for:brandSel.id,text:'Brand'}),brandSel]),
+    styleWrap,
+    field({id:'desc',label:'Piece',span:3,placeholder:'e.g. Sofa'},uid),
+    field({id:'qty',label:'Qty',span:1},uid),
+  ]);
+  base.querySelector(`#${uid}-qty`).value = '1';
+  base.querySelector(`#${uid}-qty`).inputMode = 'numeric';
+
+  const brandFields = el('div',{class:'brand-fields'});
+  const itemNotes = el('div',{class:'grid',style:'margin-top:10px'},[
+    field({id:'dims',label:'Dimensions (W × D × H)',span:2,placeholder:'Auto from SKU'},uid),
+    field({id:'room',label:'Room',type:'select',span:1,options:[''].concat(ROOMS)},uid),
+    field({id:'notes',label:'Item notes',span:3,type:'textarea'},uid)
+  ]);
+  const dimsIn = itemNotes.querySelector(`#${uid}-dims`);
+  const roomIn = itemNotes.querySelector(`#${uid}-room`);
+  roomIn.addEventListener('change',()=>{ roomIn.dataset.manual = roomIn.value ? '1' : ''; });
+  /* 83.625 -> 83 5/8 (nearest 1/8); ranges like "58.5–62" pass through */
+  const inch = x => { if (typeof x!=='number') return x; const w=Math.floor(x), e=Math.round((x-w)*8);
+    if (!e) return String(w); if (e===8) return String(w+1); let n=e,d=8; while(n%2===0){n/=2;d/=2;} return `${w} ${n}/${d}`; };
+  function setDims(key){
+    const v = key && typeof DIMS!=='undefined' ? DIMS[key] : null;
+    dimsIn.value = v ? `${inch(v[0])}"W × ${inch(v[1])}"D × ${inch(v[2])}"H${v[3]==='bed' ? ' (assembled bed)' : ''}` : '';
+  }
+  let mode = '';   // '' | 'brand:<name>' | 'sku:<key>'
+
+  function renderBrand(){
+    const m = `brand:${brandSel.value}`; if (mode===m) return; mode = m;
+    brandFields.innerHTML='';
+    const defs = BRANDS[brandSel.value];
+    if (!defs) return;
+    const g = el('div',{class:'grid'});
+    defs.forEach(d=>g.appendChild(field(d,uid)));
+    brandFields.appendChild(g);
+  }
+  function clearSku(){
+    mode=''; styleIn.value=''; base.querySelector(`#${uid}-desc`).value=''; brandFields.innerHTML=''; setDims(null);
+  }
+  brandSel.addEventListener('change',()=>{
+    updateLead();
+    if (HAS_SKUS) styleIn.setAttribute('list', skuList(brandSel.value));
+    if (mode.startsWith('sku:') && SKUS[mode.slice(4)].b !== brandSel.value) clearSku();
+    if (!mode.startsWith('sku:')) renderBrand();
+  });
+
+  styleIn.addEventListener('input',()=>{
+    /* SKU keys are unique across brands, so the SKU wins and re-points the brand select.
+       Filtering by the current brand here used to drop every cross-brand SKU back to
+       generic brand fields — which looked like "the upgrades stopped working". */
+    const key = findSku(styleIn.value);
+    if (key){
+      if (mode===`sku:${key}`) return;
+      mode = `sku:${key}`;
+      const e = SKUS[key];
+      styleIn.value = key;
+      brandSel.value = e.b; updateLead(); styleIn.setAttribute('list', skuList(e.b));
+      base.querySelector(`#${uid}-desc`).value = e.d;
+      setDims(key);   // before the fields: a bed builder overwrites piece + dimensions
+      brandFields.innerHTML=''; brandFields.appendChild(skuFields(key, uid));
+      setTimeout(()=>secFillFrom(uid), 0);   // a new piece of a sectional already on the order takes its fabric/upgrades
+    } else if (mode.startsWith('sku:')){
+      mode = ''; brandFields.innerHTML='';
+      base.querySelector(`#${uid}-desc`).value = '';
+      setDims(null);
+      renderBrand();
+    }
+  });
+
+  box.append(head, base, brandFields, itemNotes);
+  itemsEl.appendChild(box);
+  renumber();
+  styleIn.focus();
+}
+
+function renumber(){
+  const items = itemsEl.querySelectorAll('.item');
+  items.forEach((b,i)=>b.querySelector('.item-num').textContent = `Item ${i+1}`);
+  if (!items.length) addItem();
+}
+
+/* ---------- Print: hide empty fields & unused items so the customer copy is clean ---------- */
+window.addEventListener('beforeprint',()=>{
+  document.querySelectorAll('.item').forEach(item=>{
+    const brand = item.querySelector('select[id$="-brand"]');
+    item.classList.toggle('hide-print', !brand.value);
+  });
+  document.querySelectorAll('.item .f').forEach(f=>{
+    const inp = f.querySelector('input,select,textarea');
+    if (!inp) return;
+    if (inp.tagName==='TEXTAREA'){ inp.style.height='auto'; inp.style.height = inp.scrollHeight+'px'; }
+    f.classList.toggle('hide-print', !inp.value.trim());
+  });
+  document.querySelectorAll('select[id$="-brand"]').forEach(s=>s.options[0].text='');
+});
+window.addEventListener('afterprint',()=>{
+  document.querySelectorAll('.hide-print').forEach(n=>n.classList.remove('hide-print'));
+  document.querySelectorAll('select[id$="-brand"]').forEach(s=>s.options[0].text='Select brand…');
+});
+
+/* ---------- Line drawings (Archbold): front elevations to scale from DIMS (2027 price list) ----------
+   Layouts come from Archbold's tear sheets (LAYOUTS in skus.js). Everything is drawn in inches and
+   scaled with one factor per room so pieces in the same room compare truthfully. */
+const DR = {
+  stroke: 'var(--ink)', thin: 0.9, med: 1.3,
+};
+function svgWrap(w, h, body, s){
+  return `<svg class="piece-svg" viewBox="${-2} ${-2} ${w*s+4} ${h*s+4}" width="${w*s+4}" height="${h*s+4}" xmlns="http://www.w3.org/2000/svg">`+
+    `<g fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round">${body}</g></svg>`;
+}
+function Pen(s){
+  const n = v => +(v*s).toFixed(1);
+  const p = {
+    rect:(x,y,w,h,extra='')=>`<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" ${extra}/>`,
+    line:(x1,y1,x2,y2,extra='')=>`<line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" ${extra}/>`,
+    path:(d,extra='')=>`<path d="${d.replace(/-?\d+(\.\d+)?/g, m=>n(+m))}" ${extra}/>`,
+    knob:(x,y)=>`<circle cx="${n(x)}" cy="${n(y)}" r="${Math.max(1.3, n(0.55))}" fill="currentColor" stroke="none"/>`,
+    handle:(x,y,w)=>`<line x1="${n(x-w/2)}" y1="${n(y)}" x2="${n(x+w/2)}" y2="${n(y)}" stroke-width="1.6"/>`,
+    text:(x,y,t,extra='')=>`<text x="${n(x)}" y="${n(y)}" fill="currentColor" stroke="none" font-size="9" text-anchor="middle" ${extra}>${t}</text>`,
+  };
+  return p;
+}
+const isTwoWest = k => /^63\d{3}|^63\d{4}/.test(k);
+/* one cell of a case grid */
+function cell(P, c, x, y, w, h, k){
+  const g = 0.35, out = [];
+  const pull = (cx, cy, ww) => isTwoWest(k) ? P.handle(cx, cy, Math.min(5, ww*0.35)) : P.knob(cx, cy);
+  if (c==='d' || c==='f'){
+    out.push(P.rect(x+g, y+g, w-2*g, h-2*g));
+    if (w > 26 && !isTwoWest(k)) { out.push(pull(x+w*0.28, y+h/2, w), pull(x+w*0.72, y+h/2, w)); }
+    else if (w > 30 && isTwoWest(k)) { out.push(pull(x+w*0.3, y+h/2, w), pull(x+w*0.7, y+h/2, w)); }
+    else out.push(pull(x+w/2, y+(c==='f' ? h*0.3 : h/2), w));
+  } else if (c==='O'){
+    out.push(P.line(x, y+h*0.5, x+w, y+h*0.5));
+  } else if (c==='n'){
+    out.push(P.rect(x+1.5, y+1.5, w-3, h-3));
+  } else if (c==='1'){
+    out.push(P.rect(x+g, y+g, w-2*g, h-2*g), P.rect(x+2.5, y+2.5, w-5, h-5), pull(x+w-2.2, y+h*0.45, w));
+  } else if (c==='P' || c==='G'){
+    const hw = w/2;
+    [0,1].forEach(i=>{
+      const dx = x+i*hw;
+      out.push(P.rect(dx+g, y+g, hw-2*g, h-2*g), P.rect(dx+2.2, y+2.2, hw-4.4, h-4.4, c==='G' ? 'stroke-dasharray="2 2"' : ''));
+    });
+    const py = y + (h > 40 ? h*0.45 : h/2);
+    if (isTwoWest(k)) out.push(P.line(x+hw-1.8, py-3, x+hw-1.8, py+3,'stroke-width="1.6"'), P.line(x+hw+1.8, py-3, x+hw+1.8, py+3,'stroke-width="1.6"'));
+    else out.push(P.knob(x+hw-2, py), P.knob(x+hw+2, py));
+  } else if (c==='x' || c==='o'){ /* open */ }
+  return out.join('');
+}
+function grid(P, rows, x, y, w, h, k, rail=1){
+  const tot = rows.reduce((a,r)=>a+r[0],0), avail = h - rail*(rows.length-1);
+  let cy = y, out = '';
+  rows.forEach(([wt, cells])=>{
+    const rh = avail*wt/tot, n = cells.length, cw = (w - rail*(n-1))/n;
+    [...cells].forEach((c,i)=>{ out += cell(P, c, x+i*(cw+rail), cy, cw, rh, k); if (i) out += P.line(x+i*(cw+rail)-rail/2, cy, x+i*(cw+rail)-rail/2, cy+rh); });
+    cy += rh + rail;
+    if (cy < y+h) out += P.line(x, cy-rail/2, x+w, cy-rail/2);
+  });
+  return out;
+}
+function base(P, kind, x, y, w, h){ // y = top of base zone, h = base height
+  const leg = 2, out = [];
+  if (kind==='apron'){      // shaped apron between short legs
+    out.push(P.path(`M${x} ${y} L${x} ${y+h} L${x+leg} ${y+h} L${x+leg} ${y+h*0.55} Q${x+w/2} ${y+h*0.05} ${x+w-leg} ${y+h*0.55} L${x+w-leg} ${y+h} L${x+w} ${y+h} L${x+w} ${y}`));
+  } else if (kind==='post'){ // straight square legs, straight rail
+    out.push(P.path(`M${x} ${y} L${x} ${y+h} L${x+leg} ${y+h} L${x+leg} ${y+1} L${x+w-leg} ${y+1} L${x+w-leg} ${y+h} L${x+w} ${y+h} L${x+w} ${y}`));
+  } else if (kind==='bracket'){ // bracket feet
+    out.push(P.path(`M${x-0.5} ${y} L${x-0.5} ${y+h} L${x+3} ${y+h} Q${x+3.5} ${y+h*0.45} ${x+6} ${y+h*0.4} L${x+w-6} ${y+h*0.4} Q${x+w-3.5} ${y+h*0.45} ${x+w-3} ${y+h} L${x+w+0.5} ${y+h} L${x+w+0.5} ${y}`));
+  } else if (kind==='plinth'){
+    out.push(P.rect(x-0.75, y, w+1.5, h));
+  } else if (kind==='caster'){
+    out.push(P.line(x, y, x+w, y));
+    out.push(P.path(`M${x+2} ${y+h/2} m-1.2 0 a1.2 1.2 0 1 0 2.4 0 a1.2 1.2 0 1 0 -2.4 0`), P.path(`M${x+w-2} ${y+h/2} m-1.2 0 a1.2 1.2 0 1 0 2.4 0 a1.2 1.2 0 1 0 -2.4 0`));
+  }
+  return out.join('');
+}
+const BASE_H = {apron:4, post:5, bracket:4, plinth:3.5, caster:2.6, taper:0};
+function drawCase(P, L, W, H, k){
+  const top = 1, flush = L.flush || /^63|^65(0|1)/.test(k), ov = flush ? 0 : 0.75;
+  const bh = BASE_H[L.b] ?? 4, bodyH = H - top - bh;
+  const bx = ov, bw = W - 2*ov, fr = 1.5;
+  let out = P.rect(0, 0, W, top) + P.rect(bx, top, bw, bodyH) + base(P, L.b, bx, top+bodyH, bw, bh);
+  const ix = bx+fr, iy = top+fr, iw = bw-2*fr, ih = bodyH-2*fr;
+  if (L.c){  // columns (combo dresser)
+    const tot = L.c.reduce((a,c)=>a+c[0],0), aw = iw - (L.c.length-1);
+    let cx = ix;
+    L.c.forEach(([wt, rows],i)=>{ const cw = aw*wt/tot; out += grid(P, rows, cx, iy, cw, ih, k); cx += cw+1; if (i<L.c.length-1) out += P.line(cx-0.5, iy, cx-0.5, iy+ih); });
+  } else if (L.r){
+    const tot = L.r.reduce((a,r)=>a+r[0],0);
+    let cy = iy;
+    L.r.forEach(([wt, cells], i)=>{
+      const rh = (ih - (L.r.length-1))*wt/tot;
+      if (cells==='@'){   // door | drawers | door
+        const dw = iw*0.29, mw = iw - 2*dw - 2;
+        out += doorPair(P, ix, cy, dw, rh, mw, k, L.mid, L.midk||'d');
+      } else out += grid(P, [[1,cells]], ix, cy, iw, rh, k);
+      cy += rh + 1;
+      if (i < L.r.length-1) out += P.line(ix, cy-0.5, ix+iw, cy-0.5);
+    });
+  }
+  return out;
+}
+function doorPair(P, x, y, dw, h, mw, k, n, kind){
+  const tw = isTwoWest(k);
+  const door = (dx, hingeLeft) => P.rect(dx+0.35, y+0.35, dw-0.7, h-0.7) + P.rect(dx+2.2, y+2.2, dw-4.4, h-4.4) +
+    (tw ? P.line(hingeLeft ? dx+dw-2 : dx+2, y+h*0.4, hingeLeft ? dx+dw-2 : dx+2, y+h*0.6, 'stroke-width="1.6"') : P.knob(hingeLeft ? dx+dw-2 : dx+2, y+h*0.45));
+  const rows = Array.from({length:n}, ()=>[1, kind]);
+  return door(x, true) + P.line(x+dw+0.5, y, x+dw+0.5, y+h) + grid(P, rows, x+dw+1, y, mw, h, k) + P.line(x+dw+1+mw+0.5, y, x+dw+1+mw+0.5, y+h) + door(x+dw+2+mw, false);
+}
+function drawTable(P, L, W, H, k){
+  const top = 1.25, ap = 4, leg = 1.75, out = [P.rect(0, 0, W, top)];
+  const inset = L.b==='post' ? 0.75 : 1;
+  const lx = inset, rx = W - inset - leg, bot = H;
+  if (L.b==='post') out.push(P.rect(lx, top, leg, bot-top), P.rect(rx, top, leg, bot-top));
+  else out.push(P.path(`M${lx} ${top} L${lx+leg} ${top} L${lx+leg*0.8} ${bot} L${lx+leg*0.2} ${bot} Z`), P.path(`M${rx} ${top} L${rx+leg} ${top} L${rx+leg*0.8} ${bot} L${rx+leg*0.2} ${bot} Z`));
+  const ax = lx+leg, aw = rx-ax;
+  out.push(P.line(ax, top+ap, ax+aw, top+ap));
+  if (L.box){ out.push(P.rect(ax, top, aw, 10) + grid(P, L.box, ax+0.8, top+0.8, aw-1.6, 10-1.6, k)); }
+  else if (L.dr){
+    const n = L.dr, dwid = n===1 ? Math.min(aw*0.45, 18) : Math.min(aw*0.4, 16);
+    const xs = n===1 ? [ax+(aw-dwid)/2] : [ax+aw*0.25-dwid/2, ax+aw*0.75-dwid/2];
+    xs.forEach(x=>out.push(P.rect(x, top+0.6, dwid, ap-1.2), isTwoWest(k) ? P.handle(x+dwid/2, top+ap/2, 4) : P.knob(x+dwid/2, top+ap/2)));
+  }
+  if (L.sh) out.push(P.rect(ax, bot-7, aw, 1));
+  if (L.b==='post' && !L.sh) out.push(P.line(ax, bot-5, ax+aw, bot-5));   // 2 West stretcher
+  return out.join('');
+}
+function drawDesk(P, L, W, H, k){
+  const top = 1.25, bh = BASE_H[L.b] ?? 4, pw = Math.min(17.75, W*0.33), bodyH = H - top - bh, out = [P.rect(0, 0, W, top)];
+  const ov = L.ot ? 0.75 : 0;
+  const pedX = [ov, W-ov-pw];
+  L.ped.forEach((rows, i)=>{
+    if (!rows){ // open end: a leg / panel
+      const x = i ? W-ov-2 : ov;
+      out.push(P.rect(x, top, 2, H-top)); return;
+    }
+    const x = pedX[i];
+    out.push(P.rect(x, top, pw, bodyH), base(P, L.b, x, top+bodyH, pw, bh), grid(P, rows, x+1.2, top+1.2, pw-2.4, bodyH-2.4, k));
+  });
+  const kx0 = L.ped[0] ? pedX[0]+pw : ov+2, kx1 = L.ped[1] ? pedX[1] : W-ov-2;
+  out.push(P.line(kx0, top+4, kx1, top+4));
+  if (L.c){ const cw = Math.min(20, (kx1-kx0)*0.6); const cx = kx0+(kx1-kx0-cw)/2; out.push(P.rect(cx, top+0.6, cw, 2.8), isTwoWest(k) ? P.handle(cx+cw/2, top+2, 4) : P.knob(cx+cw/2, top+2)); }
+  return out.join('');
+}
+function drawHutch(P, W, H){
+  const out = [P.rect(0,0,W,1), P.rect(0.75,1,W-1.5,H-1)], ih = H-1, uh = ih*0.55;
+  const dw = W*0.28;
+  out.push(P.rect(2, 2.5, dw, uh-3) , P.rect(4, 4.5, dw-4, uh-7), P.knob(2+dw-2, uh*0.5));
+  out.push(P.rect(W-2-dw, 2.5, dw, uh-3), P.rect(W-dw, 4.5, dw-4, uh-7), P.knob(W-2-dw+2, uh*0.5));
+  out.push(P.line(2+dw+1, 1+uh*0.5, W-3-dw, 1+uh*0.5), P.line(0.75, 1+uh, W-0.75, 1+uh));
+  return out.join('');
+}
+function drawBookcase(P, L, W, H){
+  const side = 0.75, top = L.fam==='twowest' ? 0.9 : 1, out = [P.rect(0,0,W,top), P.rect(side*0 + 0.4, top, W-0.8, H-top)];
+  const ix = 1.2, iw = W-2.4, bh = L.fam==='twowest' ? 2.5 : 3.5, arch = L.fam!=='twowest';
+  if (arch) out.push(P.path(`M${ix} ${top} L${ix} ${top+2.4} Q${W/2} ${top+0.6} ${ix+iw} ${top+2.4} L${ix+iw} ${top}`));
+  const y0 = top + (arch ? 2.4 : 0.5), y1 = H - bh;
+  out.push(P.line(ix, y1, ix+iw, y1));
+  if (L.fam!=='twowest') out.push(P.path(`M${ix} ${H} L${ix} ${y1+bh*0.55} Q${W/2} ${y1+bh*0.1} ${ix+iw} ${y1+bh*0.55} L${ix+iw} ${H}`));
+  const oh = (y1 - y0)/L.n;
+  for (let i=1;i<L.n;i++) out.push(P.line(ix, y0+oh*i, ix+iw, y0+oh*i));
+  if (L.div) out.push(P.line(W/2, y0, W/2, y1));
+  if (L.doors){ // doors over the bottom two openings (72" and 84")
+    const dy = y1 - oh*2, dh = oh*2, halves = W >= 30 ? 2 : 1;
+    if (L.div || halves===2){ out.push(cell(P, 'P', ix, dy, iw, dh, L.fam==='twowest' ? '63' : '0')); }
+    else out.push(cell(P, '1', ix, dy, iw, dh, L.fam==='twowest' ? '63' : '0'));
+  }
+  return out.join('');
+}
+function drawMirror(P, L, W, H){
+  const f = 2.5;
+  if (L.arch) return P.path(`M0 ${H} L0 4 Q${W/2} -1 ${W} 4 L${W} ${H} Z`) + P.path(`M${f} ${H-f} L${f} ${4+f} Q${W/2} ${f} ${W-f} ${4+f} L${W-f} ${H-f} Z`, 'stroke-dasharray="1 2"');
+  return P.rect(0,0,W,H) + P.rect(f, f, W-2*f, H-2*f, 'stroke-dasharray="1 2"');
+}
+function drawPanel(P, pat, W, H, isFB){
+  const post = pat==='uph' || pat==='plain' ? 0 : 2.4, out = [];
+  out.push(P.rect(0, 0, W, H));
+  if (post){ out.push(P.line(post, 0, post, H), P.line(W-post, 0, W-post, H)); }
+  const x0 = post+1, x1 = W-post-1, y0 = pat==='uph' ? 2 : 3, y1 = H - (isFB ? 3 : Math.min(14, H*0.28));
+  if (pat==='shiplap'){ for (let y=y0+5; y<y1; y+=5) out.push(P.line(x0, y, x1, y)); }
+  else if (pat==='plank'){ const n = Math.round((x1-x0)/6); for (let i=1;i<n;i++) out.push(P.line(x0+(x1-x0)*i/n, y0, x0+(x1-x0)*i/n, y1)); }
+  else if (pat==='slat'){ const n = Math.round((x1-x0)/5); for (let i=1;i<n;i++) out.push(P.rect(x0+(x1-x0)*i/n-0.9, y0+2, 1.8, y1-y0-4)); out.push(P.line(x0, y0+2, x1, y0+2), P.line(x0, y1-2, x1, y1-2)); }
+  else if (pat==='uph'){ out.push(P.rect(2, 2, W-4, y1-2, 'stroke-dasharray="3 2"')); }
+  else if (pat.startsWith('bookcase')){ const w = (x1-x0)/3; out.push(P.line(x0+w, y0, x0+w, y1), P.line(x0+2*w, y0, x0+2*w, y1));
+    if (pat==='bookcaseD'){ const dh = (y1-y0)/4; [0,1].forEach(i=>out.push(P.rect(x0+w+0.8, y1-dh*(2-i)+0.4, w-1.6, dh-0.8), P.knob(x0+1.5*w, y1-dh*(1.5-i)))); } }
+  else if (pat==='open'){ out.push(P.rect(x0, y0, x1-x0, y1-y0)); }
+  else if (pat!=='plain'){ const n = pat==='estate' ? 5 : 3, w = (x1-x0-(n-1))/n; for (let i=0;i<n;i++) out.push(P.rect(x0+i*(w+1), y0, w, y1-y0)); }
+  return out.join('');
+}
+function drawPed(P, L, Len, H){
+  const out = [P.rect(0,0,Len,H)];
+  out.push(grid(P, L.r, 1.2, 1.2, Len-2.4, H-2.4, '0'));
+  return out.join('');
+}
+/* Public: an SVG for one SKU at scale s (px per inch), or null */
+function pieceSVG(k, s){
+  if (typeof LAYOUTS==='undefined') return null;
+  const L = LAYOUTS[k], d = DIMS[k];
+  if (!L || !d || typeof d[0]!=='number') return null;
+  let [W, Dp, H] = d; const P = Pen(s); let body;
+  switch (L.k){
+    case 'table': body = drawTable(P, L, W, H, k); break;
+    case 'desk':  body = drawDesk(P, L, W, H, k); break;
+    case 'hutch': body = drawHutch(P, W, H); break;
+    case 'bc':    body = drawBookcase(P, L, W, H); break;
+    case 'mirror':body = drawMirror(P, L, W, H); break;
+    case 'stool': body = P.path(`M0 ${H} L0 ${H*0.5} L${W*0.5} ${H*0.5} L${W*0.5} 0 L${W} 0 L${W} ${H} Z`); break;
+    case 'box':   body = P.rect(0,0,W,H,'stroke-dasharray="4 3"'); break;
+    case 'ped':   W = Dp; body = drawPed(P, L, Dp, H); break;          // pedestals are drawn from the long side
+    case 'hb':    body = drawPanel(P, L.pat, W, H, false); break;
+    case 'fb':    body = drawPanel(P, L.pat, W, H, true); break;
+    case 'set':   return null;                                        // drawn by the bed builder
+    default:      body = drawCase(P, L, W, H, k);
+  }
+  return svgWrap(W, H, body, s);
+}
+/* A whole bed from the builder: front view (headboard + footboard), plus a side view for chest/storage beds */
+function bedSVG(parts, s){
+  if (typeof LAYOUTS==='undefined') return null;
+  const hb = parts.find(k=>LAYOUTS[k] && LAYOUTS[k].k==='hb'), fb = parts.find(k=>LAYOUTS[k] && LAYOUTS[k].k==='fb');
+  const ped = parts.find(k=>LAYOUTS[k] && LAYOUTS[k].k==='ped');
+  let set = parts.find(k=>LAYOUTS[k] && LAYOUTS[k].k==='set');
+  let hbK = hb, fbK = fb;
+  if (set){  // a boxed set: draw it from its own headboard / footboard where the book lists them
+    for (const st of BEDS.styles) for (const [z,r] of Object.entries(st.sizes)) if (r.p[0]===set){ hbK = hbK || (st.hb||{})[z]; fbK = fbK || (st.fb||{})[z]; }
+  }
+  if (!hbK || !DIMS[hbK]) return null;
+  const P = Pen(s), H1 = DIMS[hbK], F = fbK && DIMS[fbK];
+  const pat = LAYOUTS[hbK].pat;
+  let W = H1[0], Ht = H1[2], out = '';
+  const pedH = ped ? DIMS[ped][2] : 0;
+  out += `<g opacity="0.55">${drawPanel(P, pat, W, Ht, false)}</g>`;
+  if (F){ const fx = (W-F[0])/2; out += `<g transform="translate(${(fx*s).toFixed(1)},${((Ht-F[2])*s).toFixed(1)})">${drawPanel(P, LAYOUTS[fbK].pat, F[0], F[2], true)}</g>`; }
+  const front = svgWrap(W, Ht, out, s);
+  if (!ped) return front;
+  const Pd = DIMS[ped], len = Pd[1];
+  const side = svgWrap(len, Pd[2], drawPed(P, LAYOUTS[ped], len, Pd[2]), s);
+  return front + `<div class="svg-cap">Front view</div>` + side + `<div class="svg-cap">Side view — storage pedestal</div>`;
+}
+
+/* Upholstery (La-Z-Boy, Bassett, England): top view to scale — back along the top, arms where the
+   description puts them. England/Bassett name sides as the arm you FACE (LAF/RAF); La-Z-Boy names
+   the arm you SIT beside (LSS/RSS), which is the opposite side when facing the piece. */
+function armsFor(e){
+  const d = e.d;
+  /* shapes the description can't pin down (which sides the back runs along) get the footprint only */
+  if (isCorner(e)) return 'corner';
+  if (/Bumper|Sofa Chaise/i.test(d)) return 'outline';
+  if (/Cuddler/i.test(d)) return /\bRAF\b/.test(d) ? 'R' : 'L';
+  if (/Ottoman|Console|Storage/i.test(d)) return 'none';
+  if (/Left[- ]Arm Sitting|\bLSS\b/i.test(d)) return 'R';          // sitting-left arm = on your right when facing
+  if (/Right[- ]Arm Sitting|\bRSS\b/i.test(d)) return 'L';
+  if (/\bLAF\b|Left Arm Facing|\bLF\b/i.test(d)) return 'L';
+  if (/\bRAF\b|Right Arm Facing|\bRF\b/i.test(d)) return 'R';
+  if (/Armless/i.test(d)) return 'none';
+  return 'both';
+}
+const isCornerSofa = e => /Corner Sofa|w\/ Corner/i.test(e.d);   // an arm end with the corner built in (England -63/-64, Bassett Carolina -66/-67)
+const isCorner = e => /Corner|Wedge/i.test(e.d) && !isCornerSofa(e);
+const isTyler = p => p && p.x && p.x.brand==='England' && /^1Q00/i.test(p.k);
+/* which END of a sectional a piece belongs on: 'L' = left end, 'R' = right end (as you face it), null = anywhere */
+function endSide(e){
+  const d = e.d;
+  if (isCorner(e)) return null;
+  if (/Left[- ]Arm Sitting|\bLSS\b/i.test(d)) return 'R';
+  if (/Right[- ]Arm Sitting|\bRSS\b/i.test(d)) return 'L';
+  if (/Left Bumper/i.test(d)) return 'R';     // Beckham booklet: LB goes on the right of the LF chaise
+  if (/Right Bumper/i.test(d)) return 'L';
+  if (/\bLAF\b|Left Arm Facing|\bLF\b/i.test(d)) return 'L';
+  if (/\bRAF\b|Right Arm Facing|\bRF\b/i.test(d)) return 'R';
+  return null;
+}
+/* Seat cushions: SEATS (skus.js) = seat count per SKU. Bassett from its own "n/n" cushion counts, La-Z-Boy
+   one per recliner / 2 per loveseat / sofa by published seat width. England doesn't publish counts. */
+function cushions(P, k, x0, y0, x1, y1){
+  const n = /^__\d+$/.test(k) ? +k.slice(2) : ((typeof SEATS!=='undefined' && SEATS[k]) || 0); if (!n || x1-x0 < 6) return '';
+  const w = (x1-x0)/n, g = 0.7; let out = '';
+  for (let i=0;i<n;i++) out += P.rect(x0+i*w+g, y0+g, w-2*g, y1-y0-2*g, 'rx="2"');
+  return out;
+}
+/* piece body in its own frame: width along x, back at y=0, front at y=D */
+function pieceBody(P, e, W, D, k, ov){
+  ov = ov || {};
+  const arms = ov.arms || armsFor(e), ottoman = /Ottoman|Console|Storage/i.test(e.d), back = ottoman ? 0 : Math.min(9, D*0.25), arm = 6;
+  if (/Bumper/i.test(e.d)){   // open end: back only along the joined ~58%, no arm (Beckham booklet)
+    const b = Math.min(9, D*0.25), rightEnd = endSide(e)==='R', bw = W*0.58;
+    return P.rect(0, 0, W, D) + P.rect(rightEnd ? 0 : W-bw, 0, bw, b) + P.line(0, D, W, D, 'stroke-width="2.2"');
+  }
+  if (/Cuddler/i.test(e.d)){
+    const side = endSide(e) || 'L', J = ov.join || D*0.75, b = Math.min(9, J*0.25), a = 5;
+    /* drawn as LAF (arm end droops down-left); RAF is mirrored */
+    const X = x => side==='L' ? x : W - x;
+    const pts = (arr) => arr.map(([c,x,y])=> c==='Q' ? `Q${X(x[0])} ${x[1]} ${X(y[0])} ${y[1]}` : `${c}${X(x)} ${y}`).join(' ');
+    let out = P.path(pts([['M',W,0],['Q',[W*0.42,0],[0,D*0.52]],['L',D*0.36,D],['Q',[W*0.5,J+2],[W,J]],['Z',W,0]].map(p=>p[0]==='Z'?['L',W,0]:p)) + ' Z');
+    out += P.path(pts([['M',W,b],['Q',[W*0.45,b],[a*0.9,D*0.52+a*0.4]]]));                         // back cushion line
+    out += P.path(pts([['M',0,D*0.52],['L',a,D*0.52-a*0.5],['L',D*0.36+a,D-a*0.6],['L',D*0.36,D]]));   // arm
+    if (!(ov.seats===0) && SEATS[k]) out += P.path(pts([['M',W-0.8,b+0.8],['Q',[W*0.46,b+0.8],[a+1.2,D*0.52+0.4]],['L',D*0.36+a,D-1.2],['Q',[W*0.5,J+1],[W-0.8,J-0.8]]]) + ' Z', 'rx="2"');
+    out += P.path(pts([['M',D*0.36,D],['Q',[W*0.5,J+2],[W,J]]]), 'stroke-width="2.2"');
+    return out;
+  }
+  if (arms==='corner' && /Rounded|Super Wedge/i.test(e.d)){  // curved corner: quarter-round back, one curved seat
+    const b = Math.min(9, D*0.25);
+    return P.path(`M0 0 L0 ${D} L${W} ${D} L${W} ${D*0.62} Q${W} 0 ${W*0.38} 0 Z`) +
+      P.path(`M0 ${b} L${W*0.38} ${b} Q${W-b} ${b} ${W-b} ${D*0.62} L${W-b} ${D}`) +
+      (ov.seats===0 || !(SEATS[k] || ov.seats) ? '' : P.path(`M0.7 ${b+0.7} L${W*0.36} ${b+0.7} Q${W-b-0.7} ${b+0.7} ${W-b-0.7} ${D*0.64} L${W-b-0.7} ${D-0.7} Q${W*0.4} ${D-0.7} 0.7 ${b+0.7} Z`));
+  }
+  let out = P.rect(0, 0, W, D);
+  if (arms==='corner'){  // back runs along the two outer sides (top, and the side the run turns on)
+    const b = Math.min(9, D*0.25);
+    out += P.rect(0, 0, W, b) + P.rect(W-b, b, b, D-b);
+    if (/Rounded/i.test(e.d)) out += P.path(`M0 ${D} Q${W-b} ${D} ${W-b} ${b}`, 'stroke-dasharray="2 2"');
+    else out += ov.seats===0 ? '' : cushions(P, ov.seats ? '__1' : k, 0, b, W-b, D);
+    return out;
+  }
+  if (arms==='capL' || arms==='capR'){  // Tyler: a corner wedge ending a run — back along the top and the outer side
+    const b = Math.min(9, D*0.25), L = arms==='capL';
+    out += P.rect(0, 0, W, b) + P.rect(L ? 0 : W-b, b, b, D-b);
+    out += ov.seats===0 ? '' : cushions(P, k, L ? b : 0, b, L ? W : W-b, D);
+    return out + P.line(0, D, W, D, 'stroke-width="2.2"');
+  }
+  let xa = 0, xb = W;
+  if (arms!=='outline'){
+    if (back) out += P.rect(0, 0, W, back);
+    if (arms==='both' || arms==='L'){ out += P.rect(0, back, arm, D-back); xa = arm; }
+    if (arms==='both' || arms==='R'){ out += P.rect(W-arm, back, arm, D-back); xb = W-arm; }
+    if (!ottoman) out += cushions(P, ov.seats!=null ? `__${ov.seats}` : k, xa, back, xb, D);
+  }
+  out += P.line(0, D, W, D, 'stroke-width="2.2"');
+  return out;
+}
+const sizeOf = k => { const d = DIMS[k]; if (!d) return null; const W = typeof d[0]==='number' ? d[0] : parseFloat(d[0]); return W && d[1] ? [W, d[1]] : null; };
+/* Is this a sectional piece (joins to others) rather than a stand-alone sofa/chair? */
+function isSecPiece(e){
+  if (/^Tyler Large Ottoman|Floating Ottoman Chaise/i.test(e.d)) return true;   // Tyler ottoman extends a leg; Collegedale -25 floats in front of an end   // Tyler tear sheet: the ottoman extends a leg
+  if (/w\/ Console/i.test(e.d)) return false;          // e.g. La-Z-Boy "Reclining Loveseat w/ Console" is a stand-alone piece
+  return /\b(LAF|RAF|LF|RF|LSS|RSS)\b|Arm Facing|Arm Sitting|Corner|Wedge|Armless|Bumper|Cuddler|Console/i.test(e.d);
+}
+function seriesKey(brand, k){
+  const c = k.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if (brand==='La-Z-Boy'){ const m = c.match(/(\d{3})(?!.*\d)/); return m ? m[1] : c.slice(-3); }   // e.g. Storis key "X4Q521Power" → 521
+  if (brand==='Bassett') return k.split('-')[0];
+  if (/^E36\d/.test(c)) return 'EZ36';   // EZ3600 vendor-model rows keyed E36xx
+  return c.slice(0,4);   // England
+}
+/* ---------- Arranging a sectional ----------
+   Determined by the pieces, not the entry order: the left-arm end goes left, the right-arm end goes right.
+   Only the middle pieces (armless, corners, consoles, wedges) can go in more than one order; the rep
+   drags those. Impossible sets are refused and block printing. */
+const SEC_STATE = {};   // groupKey -> {mid:[piece ids], flip:bool}
+const isFloat = p => /Floating Ottoman Chaise/i.test(p.e.d);
+function secArrange(pcs, gk){
+  const st = SEC_STATE[gk] || (SEC_STATE[gk] = {mid:[], flip:false});
+  /* England Collegedale -25 floating ottoman chaise: not part of the run — it sits in front of a free end of the
+     back run (book p.43: -25 + 6205 sofa = 79 × 58; -28,-39,-63,-25 = 85 × 109) */
+  const floats = pcs.filter(isFloat); pcs = pcs.filter(p=>!isFloat(p));
+  const single = pcs.length===1 && armsFor(pcs[0].e)==='both';
+  const Ls = pcs.filter(p=>endSide(p.e)==='L'), Rs = pcs.filter(p=>endSide(p.e)==='R');
+  const mids = pcs.filter(p=>!endSide(p.e)), corners = pcs.filter(p=>p.corner || p.cornerSofa);
+  const errors = [], warns = [];
+  const names = l => l.map(p=>p.k).join(', ');
+  if (Ls.length > 1 && Ls.length===Rs.length) errors.push(`Looks like ${Ls.length} sectionals of the same series in one room. Set the Room on the second one's pieces to a different room (e.g. Family Room) so each is drawn on its own.`);
+  else if (Ls.length > 1) errors.push(`${Ls.length} left-end pieces (${names(Ls)}). A sectional has only one left end — the arm on the left as you face it.`);
+  if (Rs.length > 1 && Ls.length!==Rs.length) errors.push(`${Rs.length} right-end pieces (${names(Rs)}). A sectional has only one right end — the arm on the right as you face it.`);
+  if (corners.length > 2 && !tyler) errors.push(`${corners.length} corner pieces — a sectional can turn at most twice.`);
+  if (!single) pcs.filter(p=>armsFor(p.e)==='both').forEach(p=>errors.push(`${p.k} has arms on both sides, so it can't join a sectional.`));
+  /* a corner sofa is an arm end with the corner built in: LAF = [sofa part][corner], RAF = [corner][sofa part] */
+  const halves = p => {
+    if (!p.cornerSofa) return [p];
+    const seats = (typeof SEATS!=='undefined' && SEATS[p.k]) || 0;
+    const seg = {...p, W: p.W - p.D, half:'seg', ov:{arms: endSide(p.e), seats: seats ? seats-1 : 0}};
+    const cor = {...p, W: p.D, corner:true, half:'corner', ov:{arms:'corner', seats: seats ? 1 : 0}};
+    return endSide(p.e)==='L' ? [seg, cor] : [cor, seg];
+  };
+  const jd = (pcs.find(p=>!/Cuddler|Chaise/i.test(p.e.d)) || {}).D;
+  /* England Tyler (1Q00) tear sheet: a corner wedge at the very end of a run is an end cap (no turn); the
+     large ottoman goes at an end and makes a leg, turning at the nearest corner (-10,-22,-39,-39,-22 = 161 × 88) */
+  const tyler = isTyler(pcs[0]);
+  const isOtt = p => /Ottoman/i.test(p.e.d);
+  const tylerize = seq => {
+    seq = seq.map(p=>({...p}));
+    const n = seq.length;
+    [0, n-1].forEach((i, side)=>{ const p = seq[i]; if (n>1 && p.corner && !isOtt(p)) { p.corner = false; p.cap = true; p.ov = {...(p.ov||{}), arms: side ? 'capR' : 'capL'}; } });
+    return seq;
+  };
+  const build = ids => {
+    const seq = [...Ls.slice(0,1), ...ids.map(id=>mids.find(p=>p.id===id)), ...Rs.slice(-1)].flatMap(halves);
+    const out = seq.map(p=> /Cuddler/i.test(p.e.d) ? {...p, ov:{...(p.ov||{}), join: jd || p.D*0.75}} : p);
+    return tyler ? tylerize(out) : out;
+  };
+  /* order rules — these can be fixed by dragging, so the rearrange bar stays up */
+  const openOK = pcs.length && ((pcs[0].x.brand==='England' && /^1Q00/i.test(pcs[0].k)) || (pcs[0].x.brand==='Bassett' && /^2676/.test(pcs[0].k)));
+  const isCon = p => /Console/i.test(p.e.d);
+  const isCh = p => /Chaise/i.test(p.e.d) && !/Sofa Chaise/i.test(p.e.d);
+  const orderErrors = seq => {
+    const e = [];
+    if (tyler){
+      seq.forEach((p,i)=>{ if (isOtt(p) && i!==0 && i!==seq.length-1) e.push(`${p.k} (ottoman) goes at an end — drag it to the left or right end.`); });
+      [0, seq.length-1].forEach(i=>{ const p = seq[i]; if (!p || !isOtt(p) || seq.length<2) return;
+        const dir = i ? -1 : 1; let j = i+dir; while (j>=0 && j<seq.length && !seq[j].corner) j += dir;
+        if (!(j>=0 && j<seq.length)) e.push(`${p.k} (ottoman) needs a corner wedge on its side to turn at — drag a corner toward it.`); });
+      if (seq.filter(p=>p.corner).length > 2) e.push('More than two turns — drag a corner wedge to an end.');
+    }
+    else if (seq[0] && seq[0].corner) e.push(`A corner (${seq[0].k}) can't be the left end — drag it between two pieces.`);
+    else if (seq.length>1 && seq[seq.length-1].corner) e.push(`A corner (${seq[seq.length-1].k}) can't be the right end — drag it between two pieces.`);
+    for (let i=1;i<seq.length;i++) if (seq[i].corner && seq[i-1].corner) e.push(`Two corners (${seq[i-1].k}, ${seq[i].k}) can't sit side by side — drag a piece between them.`);
+    /* Zach 2026-09-24: a storage console only goes between two seats (a corner counts as a seat) */
+    seq.forEach((p,i)=>{
+      if (!isCon(p)) return;
+      if (i===0 || i===seq.length-1) e.push(`${p.k} (console) is at an end — a console only goes between two seats. Drag it inward.`);
+      else if (isCon(seq[i-1])) e.push(`Two consoles side by side (${seq[i-1].k}, ${p.k}) — drag a seat between them.`);
+    });
+    /* Zach 2026-09-24: a chaise can't attach directly to a corner (a chaise ending either leg is fine — Trouper 119½") */
+    seq.forEach((p,i)=>{
+      if (!isCh(p)) return;
+      const nb = [seq[i-1], seq[i+1]].find(q=>q && q.corner);
+      if (nb) e.push(`${p.k} (chaise) is attached directly to the corner ${nb.k} — it needs a seat or console between them.`);
+    });
+    return e;
+  };
+  /* keep the rep's dragged order for the middle pieces; new pieces go at the end */
+  let known = st.mid.filter(id=>mids.some(p=>p.id===id));
+  mids.filter(p=>!known.includes(p.id)).forEach(p=>known.push(p.id));
+  /* first time a group is seen (or it changed): if entry order breaks a rule, try a sensible order —
+     corners spread between the seats, consoles tucked between two seats */
+  const sig = mids.map(p=>p.id).sort().join('|');
+  if (st.sig!==sig){
+    st.sig = sig;
+    if (orderErrors(build(known)).length){
+      const cs = mids.filter(p=>p.corner), con = mids.filter(isCon), seats = mids.filter(p=>!p.corner && !isCon(p));
+      const groups = Array.from({length: cs.length+1}, ()=>[]);
+      seats.forEach((p,i)=>groups[Math.min(cs.length, Math.floor(i*(cs.length+1)/Math.max(1,seats.length)))].push(p));
+      con.forEach(c=>{ const g = groups.reduce((a,b)=>b.length>a.length?b:a); g.splice(Math.max(1, Math.floor(g.length/2)), 0, c); });
+      const cand = groups.flatMap((g,i)=> i<cs.length ? [...g, cs[i]] : g).map(p=>p.id);
+      if (orderErrors(build(cand)).length < orderErrors(build(known)).length) known = cand;
+      if (tyler){
+        const ot = mids.filter(isOtt), cs2 = mids.filter(p=>p.corner), rest = mids.filter(p=>!isOtt(p) && !p.corner);
+        const t = [ot[0], cs2[0], ...rest, ...cs2.slice(1), ...ot.slice(1)].filter(Boolean).map(p=>p.id);
+        if (orderErrors(build(t)).length < orderErrors(build(known)).length) known = t;
+      }
+    }
+  }
+  st.mid = known;
+  const ordered = build(known);
+  const hard = errors.length;
+  if (!errors.length) errors.push(...orderErrors(ordered));
+  /* Zach 2026-09-24: both ends need an arm (or chaise/cuddler/bumper) — except Tyler; Bassett Beckham's own booklet shows armless ends */
+  const bends = ordered.filter(p=>p.corner).length;
+  if (floats.length > 2) errors.push(`${floats.length} floating ottoman chaises — there are only two ends.`);
+  else if (floats.length && (bends >= 2 || (floats.length===2 && bends===1))) errors.push(`Not enough free ends for ${floats.length===1 ? 'the floating ottoman chaise' : 'both floating ottoman chaises'} — it sits in front of an open end of the back run.`);
+  if (!openOK && !hard && !single){
+    if (!Ls.length) errors.push('The left end has no arm. Every sectional needs a left-arm piece (LAF, left chaise, cuddler…) at its left end.');
+    if (!Rs.length) errors.push('The right end has no arm. Every sectional needs a right-arm piece (RAF, right chaise, cuddler…) at its right end.');
+  }
+  let force = null;
+  const fixable = !hard && (Ls.length || Rs.length || openOK) && errors.every(e=>/drag/i.test(e));
+  return {ordered, errors, warns, st, Ls, Rs, mids, corners, force, fixable, floats};
+}
+/* Lay pieces out left → right as you face the sectional. 0 corners: straight. 1 corner: an L — by default
+   the longer leg runs along the back wall (the rep can swap). 2 corners: U, both legs coming forward. */
+function planLayout(pieces, flip, force, sofaWall){
+  const idx = pieces.map((p,i)=>p.corner ? i : -1).filter(i=>i>=0);
+  const legs = []; let cur = [];
+  pieces.forEach(p=>{ if (p.corner){ legs.push(cur); legs.push([p]); cur = []; } else cur.push(p); });
+  legs.push(cur);
+  const place = [];
+  const runE = (list, x0, y0) => { let x = x0; list.forEach(p=>{ place.push({p, x, y:y0, rot:0}); x += p.W; }); return x; };
+  const runS = (list, xr, y0) => { let y = y0; list.forEach(p=>{ place.push({p, x:xr, y, rot:90}); y += p.W; }); return y; };
+  const runN = (list, xl, yBottom) => { let y = yBottom; list.forEach(p=>{ place.push({p, x:xl, y, rot:-90}); y -= p.W; }); return y; };
+  const len = l => l.reduce((a,p)=>a+p.W,0);
+  if (idx.length===0){ runE(pieces, 0, 0); }
+  else if (idx.length===1){
+    const [A,[C],B] = legs;
+    /* longer leg on the wall; on a tie England's examples put a square corner on the right, a curved one on the left */
+    const tie = Math.abs(len(A)-len(B)) < 1, curved = /Rounded|Super Wedge/i.test(C.e.d);
+    const lzbCurve = curved && /La-Z-Boy/.test((C.x||{}).brand||'');   // Trouper tear pad: every L has the corner on the left
+    /* a corner sofa (Bassett Carolina -66 + -41 = 93 × 94) keeps its sofa part on the wall */
+    const sofaA = C.half==='corner' && (sofaWall || /Bassett/.test((C.x||{}).brand||'')) ? A.some(p=>p.half==='seg') : null;
+    const leftOnWall = force ? force==='A' : (sofaA!==null ? sofaA : lzbCurve ? false : tie ? !curved : len(A) > len(B)) !== !!flip;
+    if (leftOnWall){ const x = runE(A, 0, 0); place.push({p:C, x, y:0, rot:0}); runS(B, x+C.W, C.W); }
+    else { place.push({p:C, x:0, y:0, rot:-90, corner:'TL'}); runN(A, 0, C.W+len(A)); runE(B, C.W, 0); }
+  }
+  else {
+    const [A,[C1],B,[C2],Cc] = legs;
+    place.push({p:C1, x:0, y:0, rot:-90, corner:'TL'}); runN(A, 0, C1.W+len(A));
+    const x = runE(B, C1.W, 0); place.push({p:C2, x, y:0, rot:0}); runS(Cc, x+C2.W, C2.W);
+  }
+  return {place};
+}
+function sectionalSVG(pieces, s, flip, force, floats, fside){
+  /* with a floating chaise, England's book keeps the corner sofa's sofa side on the wall (-28,-39,-63,-25 = 85 × 109) */
+  const {place} = planLayout(pieces, flip, force, !!(floats && floats.length));
+  const extra = [];   // floating ottoman chaises: drawn in front of a free end of the back run
+  if (floats && floats.length){
+    const run = place.filter(q=>q.rot===0).sort((a,b)=>a.x-b.x);
+    const tl = place.some(q=>q.corner==='TL');
+    const free = [];
+    if (run.length && !tl && !run[0].p.corner) free.push(['L', run[0]]);
+    if (run.length && !run[run.length-1].p.corner) free.push(['R', run[run.length-1]]);
+    if (fside==='R') free.reverse();
+    floats.forEach((f,i)=>{ const pr = free[i]; if (!pr) return; const [side, q] = pr;
+      const ov = Math.min(25, q.p.D*0.72), x = side==='L' ? q.x : q.x + q.p.W - f.W, y = q.p.D - ov;
+      extra.push({f, x, y}); });
+  }
+  const P = Pen(s); let body = '', minX=1e9, minY=1e9, maxX=-1e9, maxY=-1e9;
+  const pts = [];
+  place.forEach(({p, x, y, rot, corner})=>{
+    let t;
+    if (rot===0) t = `translate(${x},${y})`;
+    else if (rot===90) t = `translate(${x},${y}) rotate(90)`;
+    else t = corner==='TL' ? `translate(${x+p.W},${y}) scale(-1,1)` : `translate(${x},${y}) rotate(-90)`;
+    const box = rot===0 || corner==='TL' ? [x, y, x+p.W, y+p.D] : rot===90 ? [x-p.D, y, x, y+p.W] : [x, y-p.W, x+p.D, y];
+    minX=Math.min(minX,box[0]); minY=Math.min(minY,box[1]); maxX=Math.max(maxX,box[2]); maxY=Math.max(maxY,box[3]);
+    pts.push({box, p});
+    body += `<g transform="${scaleT(t, s)}">${pieceBody(P, p.e, p.W, p.D, p.k, p.ov)}</g>`;
+  });
+  extra.forEach(({f,x,y})=>{
+    const box = [x, y, x+f.W, y+f.D]; minX=Math.min(minX,box[0]); minY=Math.min(minY,box[1]); maxX=Math.max(maxX,box[2]); maxY=Math.max(maxY,box[3]);
+    pts.push({box:[x, y+f.D*0.5, x+f.W, y+f.D], p:f});
+    body += `<g transform="${scaleT(`translate(${x},${y})`, s)}">${P.rect(0, 0, f.W, f.D, 'rx="2" style="fill:var(--paper)"')}${P.line(0, f.D, f.W, f.D, 'stroke-width="2.2"')}</g>`;
+  });
+  pts.filter(({p})=>!p.half || p.half==='seg').forEach(({box,p})=>{ body += `<g class="sec-lab">${P.text((box[0]+box[2])/2, (box[1]+box[3])/2 + 1.5, esc(p.k), 'font-size="8" paint-order="stroke" stroke="var(--paper)" stroke-width="3"')}</g>`; });
+  const W = maxX-minX, H = maxY-minY;
+  const svg = `<svg class="piece-svg" viewBox="${(minX*s-2).toFixed(1)} ${(minY*s-2).toFixed(1)} ${(W*s+4).toFixed(1)} ${(H*s+4).toFixed(1)}" width="${(W*s+4).toFixed(1)}" height="${(H*s+4).toFixed(1)}" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round">${body}</g></svg>`;
+  return {svg, W, H};
+}
+/* translate()/rotate() are written in inches; convert the translate part to px */
+function scaleT(t, s){ return t.replace(/translate\(([-\d.]+),([-\d.]+)\)/, (m,a,b)=>`translate(${(+a*s).toFixed(1)},${(+b*s).toFixed(1)})`); }
+function upholsterySVG(k, s){
+  const e = SKUS[k], sz = sizeOf(k); if (!e || !sz) return null;
+  const [W, D] = sz;
+  return svgWrap(W, D, pieceBody(Pen(s), e, W, D, k), s);
+}
+
+/* ---------- Page 2: what's being ordered, room by room ----------
+   Rebuilt whenever the form changes. Prints on its own page after the signature page. Drawings in a
+   room share one scale so the pieces compare truthfully; every drawing is labelled with its size. */
+const ROOMS = ['Living Room','Family Room','Basement','Bedroom','Office','Dining Room','Kitchen','Other'];
+function roomFor(brand, k){
+  if (brand && brand!=='Archbold') return 'Living Room';
+  const d = (SKUS[k]||{}).d || '';
+  if (/^7\d{4}/.test(k) && /Pantry|Cabinet/.test(d)) return 'Kitchen';
+  if (/Bookcase/.test(d) && !/Headboard/.test(d)) return 'Living Room';
+  if (!/Chest Bed/.test(d) && /Desk|Return|File|Credenza|Hutch|Workstation|Writing|Universal Pedestal|2 Door Cabinet/.test(d)) return 'Office';
+  if (/Table|Console/.test(d)) return 'Living Room';
+  return 'Bedroom';
+}
+function itemSnapshot(it){
+  const uid = it.querySelector('select[id$="-brand"]').id.replace(/-brand$/,'');
+  const brand = document.getElementById(`${uid}-brand`).value; if (!brand) return null;
+  const skuTxt = document.getElementById(`${uid}-style`).value.trim();
+  const key = HAS_SKUS ? findSku(skuTxt) : null;
+  const bed = it.querySelector('.bed-block');
+  const parts = bed && bed.dataset.parts ? JSON.parse(bed.dataset.parts) : null;
+  const opts = [];
+  if (bed) bed.querySelectorAll('.bed-lines .k').forEach(k=>{ if (k.textContent!=='Size') opts.push(`${k.textContent}: ${k.nextSibling.textContent}`); });
+  else it.querySelectorAll('.brand-fields .f').forEach(f=>{
+    const n = f.querySelector('input,select'); if (!n || n.disabled || !n.value.trim() || n.offsetParent===null) return;
+    const lab = f.querySelector('label').textContent;
+    if (/^(Build as|Collection|Bed size)$/.test(lab)) return;
+    const v = n.tagName==='SELECT' ? n.options[n.selectedIndex].text : n.value;
+    opts.push(`${lab}: ${v}`);
+  });
+  const sizeLine = bed ? [...bed.querySelectorAll('.bed-lines .k')].find(k=>k.textContent==='Size') : null;
+  return { uid, brand, key, parts, opts,
+    desc: document.getElementById(`${uid}-desc`).value, qty: document.getElementById(`${uid}-qty`).value || '1',
+    dims: sizeLine ? sizeLine.nextSibling.textContent : document.getElementById(`${uid}-dims`).value,
+    room: autoRoom(uid, brand, key) };
+}
+/* inches a drawing needs (w, h) so a room can share one scale */
+function extent(x){
+  if (x.parts){ const hb = x.parts.map(k=>DIMS[k]).filter(Boolean); const ped = x.parts.find(k=>(LAYOUTS[k]||{}).k==='ped');
+    const w = Math.max(...hb.map(d=>typeof d[0]==='number'?d[0]:0), ped ? DIMS[ped][1] : 0); const h = Math.max(...hb.map(d=>d[2]||0)); return [w||80, h||55]; }
+  const d = DIMS[x.key]; if (!d) return null;
+  const w = typeof d[0]==='number' ? d[0] : parseFloat(d[0]);
+  if (x.brand!=='Archbold') return [w, d[1]];
+  if ((LAYOUTS[x.key]||{}).k==='ped') return [d[1], d[2]];
+  return [w, d[2]];
+}
+function drawingFor(x, s){
+  if (typeof LAYOUTS==='undefined') return null;
+  if (x.parts) return bedSVG(x.parts, s);
+  if (!x.key) return null;
+  return x.brand==='Archbold' ? pieceSVG(x.key, s) : upholsterySVG(x.key, s);
+}
+function renderPage2(){
+  const host = document.getElementById('page2'); if (!host) return;
+  const items = [...itemsEl.querySelectorAll('.item')].map(itemSnapshot).filter(Boolean);
+  host.hidden = !items.length; if (!items.length){ host.innerHTML=''; return; }
+  const byRoom = new Map(); items.forEach(x=>{ if (!byRoom.has(x.room)) byRoom.set(x.room, []); byRoom.get(x.room).push(x); });
+  const nm = document.getElementById('cname').value, on = document.getElementById('ticket').value;
+  let html = `<div class="p2-head"><div><img class="logo p2-logo" alt="Markson&rsquo;s Furniture &amp; Mattress" src="${document.getElementById('logo').src}"><div class="doc-title" style="text-align:left">Your order, room by room</div></div>`+
+    `<div class="p2-meta">${[nm && `<b>${esc(nm)}</b>`, on && `Order ${esc(on)}`].filter(Boolean).join('<br>')}</div></div>`;
+  for (const room of ROOMS.concat([...byRoom.keys()].filter(r=>!ROOMS.includes(r)))){
+    const list = byRoom.get(room); if (!list) continue;
+    /* join consecutive sectional pieces of the same brand + series into one sectional */
+    const units = []; let grp = null;
+    list.forEach(x=>{
+      const e = SKUS[x.key];
+      const sec = x.brand!=='Archbold' && e && isSecPiece(e) && sizeOf(x.key);
+      const sk = sec ? x.brand+'|'+seriesKey(x.brand, x.key) : null;
+      /* every sectional piece of the same brand + series in this room is one sectional, whatever order
+         they were entered in — the arrangement is worked out from the pieces themselves */
+      if (sec){ const g = units.find(u=>u.sk===sk); if (g){ g.items.push(x); return; } units.push({sk, items:[x]}); return; }
+      units.push({single:x});
+    });
+    /* a floating ottoman chaise alone with a sofa of its collection joins that sofa (Collegedale -25 + 6205) */
+    units.filter(u=>u.items && u.items.every(x=>/Floating Ottoman Chaise/i.test((SKUS[x.key]||{}).d||''))).forEach(u=>{
+      const coll = (SKUS[u.items[0].key].d||'').split(' ')[0];
+      const i = units.findIndex(v=>v.single && v.single.brand===u.items[0].brand && SKUS[v.single.key] && sizeOf(v.single.key) &&
+        (SKUS[v.single.key].d||'').split(' ')[0]===coll && /Sofa|Loveseat/i.test(SKUS[v.single.key].d) && armsFor(SKUS[v.single.key])==='both');
+      if (i>=0){ u.items.unshift(units[i].single); units.splice(i, 1); }
+    });
+    /* one collection split across series (Bassett Carolina 3851 Sock Arm + 3849 Track Arm) can't be one sectional:
+       fold those groups into a single refused card that says why */
+    const collOf = x => { const e = SKUS[x.key]; return e ? x.brand+'|'+(e.d||'').split(' ')[0] : ''; };
+    const byColl = new Map();
+    units.forEach(u=>{ if (!u.items) return; const c = collOf(u.items[0]); if (!byColl.has(c)) byColl.set(c, []); byColl.get(c).push(u); });
+    byColl.forEach(us=>{
+      if (us.length < 2) return;
+      const label = u => { const k = u.items[0].key, d = SKUS[k].d, st = (d.split('·')[1]||'').trim(); return `${seriesKey(u.items[0].brand, k)}${st ? ' '+st : ''}`; };
+      const all = us.flatMap(u=>u.items);
+      us.slice(1).forEach(u=>units.splice(units.indexOf(u), 1));
+      Object.assign(us[0], {items: all, mismatch: `These sectional pieces are from different series (${us.map(label).join(', ')}). One sectional has to be all one series${us.some(u=>/Arm/.test(label(u))) ? ' — the same arm style on every piece' : ''}. Change the pieces so they match, or set a different Room on the pieces of a second sectional.`});
+    });
+    units.forEach(u=>{ if (u.items && u.items.length===1){ u.single = u.items[0]; delete u.items; } });
+    const ext = units.map(u=>{
+      if (!u.items) return extent(u.single);
+      if (u.mismatch) return null;
+      const pcs = secPieces(u.items), A = secArrange(pcs, groupKey(u.items)); if (A.errors.length) return null;
+      const r = sectionalSVG(A.ordered, 1, A.st.flip, A.force, A.floats, A.st.fside); return [r.W*190/420, r.H*125/200];
+    }).filter(Boolean);
+    const s = ext.length ? Math.min(2.2, ...ext.map(([w,h])=>Math.min(190/w, 125/h))) : 1;
+    html += `<section class="p2-room"><h3>${room}</h3><div class="p2-grid">`;
+    for (const u of units){
+      if (u.mismatch){ html += `<div class="p2-card p2-sec p2-sec-err"><div class="sec-err"><b>This sectional can't be built as entered.</b><ul><li>${esc(u.mismatch)}</li></ul>Fix the items above; printing is blocked until it's fixed.</div>`+
+        `<div class="p2-title">${esc(u.items[0].brand)} sectional — ${u.items.length} pieces</div><div class="p2-sub">${u.items.map(x=>esc(x.key)).join(' · ')}</div></div>`; continue; }
+      if (u.items){ html += sectionalCard(u.items, s); continue; }
+      const x = u.single;
+      const svg = drawingFor(x, s);
+      const view = x.parts ? 'Front view' : x.brand==='Archbold' ? 'Front view' : 'Top view · front edge in bold';
+      html += `<div class="p2-card"><div class="p2-draw">${svg || '<div class="p2-none">No drawing for this piece yet</div>'}</div>`+
+        (svg && !/svg-cap/.test(svg) ? `<div class="svg-cap">${view}</div>` : '')+
+        `<div class="p2-title">${esc(x.qty)} × ${esc(x.desc || x.key || x.brand)}</div>`+
+        `<div class="p2-sub">${esc(x.brand)}${x.key ? ' · '+esc(x.key) : ''}</div>`+
+        (x.opts.length ? `<div class="p2-opts">${x.opts.map(esc).join('<br>')}</div>` : '')+
+        (x.dims ? `<div class="p2-dims">${esc(x.dims)}</div>` : '')+
+        ((LAYOUTS[x.key]||{}).k==='box' ? `<div class="p2-warn">Drawer layout not confirmed — outline only</div>` : '')+`</div>`;
+    }
+    html += `</div></section>`;
+  }
+  html += `<p class="p2-foot">Drawings are to scale within each room, from the manufacturer's published dimensions. Finish and fabric colours are not shown.</p>`;
+  host.innerHTML = html;
+}
+function secPieces(items){
+  const out = [];
+  items.forEach(x=>{
+    const e = SKUS[x.key]; let [W,D] = sizeOf(x.key); const corner = isCorner(e); let approx = false;
+    /* corners are square; La-Z-Boy's rounded corner lists wall space, not its sides, so it's approximated */
+    /* square corners: W = side. Curved: England super wedge side = W/√2 (their examples), La-Z-Boy rounded
+       corner side from tear pads: Trouper 46, Maddox 46, Ava 44, James 44; others W × 46/62 */
+    if (corner){ if (Math.abs(W-D) < 3) D = W; else { const lzb = {'44C724':46,'44C759':46,'44C769':44,'44C521':44}[x.key]; W = D = x.brand==='La-Z-Boy' ? (lzb || W*46/62) : Math.max(D, W/Math.SQRT2); approx = x.brand==='La-Z-Boy' && !lzb; } }
+    const cornerSofa = isCornerSofa(e);
+    if (/Cuddler/i.test(e.d)) W = W - 5;
+    for (let i=0;i<Math.max(1, parseInt(x.qty)||1);i++) out.push({id:`${x.uid}#${i}`, k:x.key, e, W, D, corner, cornerSofa, approx, x});
+  });
+  return out;
+}
+const groupKey = items => items.map(x=>x.uid).join(',');
+function sectionalCard(items, s){
+  const pcs = secPieces(items), gk = groupKey(items), A = secArrange(pcs, gk);
+  const first = items[0];
+  const optsSame = items.every(x=>x.opts.join('|')===first.opts.join('|'));
+  const ft = v => inchTxt(Math.round(v*8)/8);
+  let draw = '', dims = '';
+  if (!A.errors.length){ const r = sectionalSVG(A.ordered, s * 420/190, A.st.flip, A.force, A.floats, A.st.fside); draw = r.svg; dims = `Overall about ${ft(r.W)}"W × ${ft(r.H)}"D`; }
+  /* rearrange bar (screen only): ends are locked, middle pieces drag (or use the arrows on a tablet) */
+  const chip = (p, lock) => `<span class="sec-chip${lock ? ' lock' : ''}" ${lock ? '' : `draggable="true" data-g="${gk}" data-id="${p.id}"`}>`+
+    (lock ? '' : `<button type="button" class="mv" data-g="${gk}" data-id="${p.id}" data-d="-1" aria-label="Move left">◀</button>`)+
+    `${esc(p.k)}${lock ? ' 🔒' : ''}`+
+    (lock ? '' : `<button type="button" class="mv" data-g="${gk}" data-id="${p.id}" data-d="1" aria-label="Move right">▶</button>`)+`</span>`;
+  const bar = (A.errors.length && !A.fixable) ? '' :
+    `<div class="sec-bar no-print"><span class="sec-hint">Left → right as you face it. Drag the middle pieces to rearrange:</span>`+
+    `<div class="sec-chips">${A.ordered.filter(p=>p.half!=='corner').map(p=>chip(p, !!endSide(p.e))).join('<span class="sec-join">+</span>')}</div>`+
+    (A.ordered.filter(p=>p.corner).length===1 ? (A.force ? `<div class="sec-hint">The chaise side stays along the wall.</div>` : `<button type="button" class="sec-flip" data-g="${gk}">Swap which side runs along the wall</button>`) : '')+
+    (A.floats.length===1 && !A.ordered.some(p=>p.corner) ? `<button type="button" class="sec-flip sec-fside" data-g="${gk}">Move the floating chaise to the other end</button>` : '')+`</div>`;
+  const england = first.brand==='England';
+  return `<div class="p2-card p2-sec${A.errors.length ? ' p2-sec-err' : ''}" data-g="${gk}">`+
+    (A.errors.length ? `<div class="sec-err"><b>${A.fixable ? 'Rearrange this sectional before printing.' : 'This sectional can\'t be built as entered.'}</b><ul>${A.errors.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>${A.fixable ? 'Drag the pieces below.' : 'Fix the items above;'} Printing is blocked until it's fixed.</div>`
+                     : `<div class="p2-draw">${draw}</div><div class="svg-cap">Top view · as you face it · front edges in bold</div>`)+
+    bar+
+    `<div class="p2-title">${esc(first.brand)} sectional — ${pcs.length} pieces</div>`+
+    (dims ? `<div class="p2-dims">${dims}</div>` : '')+
+    `<ol class="p2-pieces">${A.ordered.filter(p=>p.half!=='corner').concat(A.errors.length ? pcs.filter(p=>!A.ordered.includes(p)) : []).map(p=>`<li><b>${esc(p.k)}</b> ${esc(p.x.desc)}${optsSame ? '' : ' — '+esc(p.x.opts.join(' · '))}</li>`).join('')}</ol>`+
+    (optsSame && first.opts.length ? `<div class="p2-opts">${first.opts.map(esc).join('<br>')}</div>` : '')+
+    (pcs.some(p=>p.approx) ? `<div class="p2-warn">Rounded corner drawn at Trouper's proportions (46" sides on a 62" unit) — confirm for this collection</div>` : '')+
+    (england && pcs.some(p=>!(SEATS[p.k]) && !/Ottoman/i.test(p.e.d)) ? `<div class="p2-sub">Seat cushions not drawn on some pieces — no England tear sheet for this series yet.</div>` : '')+
+    (A.errors.length ? '' : A.warns.map(w=>`<div class="p2-warn">⚠ ${esc(w)}</div>`).join(''))+`</div>`;
+}
+/* drag / arrow / swap handlers for the sectional bar */
+function secMove(gk, id, toIdx){
+  const st = SEC_STATE[gk]; if (!st) return;
+  const from = st.mid.indexOf(id); if (from<0) return;
+  st.mid.splice(from,1); st.mid.splice(Math.max(0, Math.min(toIdx, st.mid.length)), 0, id);
+  renderPage2();
+}
+document.addEventListener('click', e=>{
+  const mv = e.target.closest('.sec-chip .mv');
+  if (mv){ const st = SEC_STATE[mv.dataset.g]; const i = st.mid.indexOf(mv.dataset.id); secMove(mv.dataset.g, mv.dataset.id, i + (+mv.dataset.d)); return; }
+  const fl = e.target.closest('.sec-flip');
+  if (fl){ const st = SEC_STATE[fl.dataset.g]; if (fl.classList.contains('sec-fside')) st.fside = st.fside==='R' ? 'L' : 'R'; else st.flip = !st.flip; renderPage2(); }
+});
+let secDrag = null;
+document.addEventListener('dragstart', e=>{ const c = e.target.closest && e.target.closest('.sec-chip[draggable]'); if (!c) return; secDrag = {g:c.dataset.g, id:c.dataset.id}; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain', c.dataset.id); c.classList.add('dragging'); });
+document.addEventListener('dragover', e=>{ const c = e.target.closest && e.target.closest('.sec-chip[draggable]'); if (secDrag && c && c.dataset.g===secDrag.g) e.preventDefault(); });
+document.addEventListener('drop', e=>{
+  const c = e.target.closest && e.target.closest('.sec-chip[draggable]'); if (!secDrag || !c || c.dataset.g!==secDrag.g) return;
+  e.preventDefault(); const st = SEC_STATE[secDrag.g]; secMove(secDrag.g, secDrag.id, st.mid.indexOf(c.dataset.id)); secDrag = null;
+});
+document.addEventListener('dragend', ()=>{ secDrag = null; });
+const esc = t => String(t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let p2t; const queuePage2 = () => { clearTimeout(p2t); p2t = setTimeout(renderPage2, 120); };
+['input','change'].forEach(ev=>document.addEventListener(ev, queuePage2));
+window.addEventListener('beforeprint', renderPage2);
+
+/* ---------- Sectional pieces share their selections (Zach 9/24: copy, but the rep may change one) ----------
+   Pieces of one sectional = same brand + series + room. A new piece starts with the first piece's selections;
+   changing the FIRST piece copies to the others that still match what it replaced. Changing any other piece
+   changes only that piece, so a rep can deliberately mix. A field a piece doesn't have is skipped,
+   and a select only takes values it actually offers. */
+function secMates(uid){
+  const key = findSku(document.getElementById(`${uid}-style`).value); const e = key && SKUS[key];
+  if (!e || e.b==='Archbold' || !isSecPiece(e)) return [];
+  const sk = e.b+'|'+seriesKey(e.b, key), room = autoRoom(uid, e.b, key);
+  return [...itemsEl.querySelectorAll('.item')].map(it=>it.querySelector('select[id$="-brand"]').id.replace(/-brand$/,''))
+    .filter(u=>u!==uid).filter(u=>{ const k = findSku(document.getElementById(`${u}-style`).value), x = k && SKUS[k];
+      return x && x.b!=='Archbold' && isSecPiece(x) && x.b+'|'+seriesKey(x.b, k)===sk && autoRoom(u, x.b, k)===room; });
+}
+let secCopying = false;
+function secPut(n, v){
+  if (n.tagName==='SELECT' && ![...n.options].some(o=>o.value===v)) return false;
+  n.value = v; n.dataset.prev = v;
+  n.dispatchEvent(new Event('input', {bubbles:true})); n.dispatchEvent(new Event('change', {bubbles:true}));
+  return true;
+}
+const secFieldId = (n, uid) => n.id.slice(uid.length+1);
+document.addEventListener('focusin', e=>{ const n = e.target; if (n.closest && n.closest('.brand-fields') && n.id) n.dataset.prev = n.value; });
+document.addEventListener('change', e=>{
+  const n = e.target; if (secCopying || !n.closest || !n.closest('.brand-fields') || !n.id) return;
+  const uid = n.id.split('-')[0], fid = secFieldId(n, uid), prev = n.dataset.prev || '', v = n.value;
+  n.dataset.prev = v; if (v===prev) return;
+  /* only the sectional's first piece (as entered) leads; editing any other piece changes just that piece */
+  const mates = secMates(uid); if (!mates.length) return;
+  const order = [...itemsEl.querySelectorAll('.item')].map(it=>it.querySelector('select[id$="-brand"]').id.replace(/-brand$/,''));
+  if (mates.some(u=>order.indexOf(u) < order.indexOf(uid))) return;
+  secCopying = true;
+  try { secMates(uid).forEach(u=>{ const t = document.getElementById(`${u}-${fid}`); if (t && (t.value==='' || t.value===prev)) secPut(t, v); }); }
+  finally { secCopying = false; }
+});
+function secFillFrom(uid){
+  const src = secMates(uid)[0]; if (!src) return;
+  secCopying = true;
+  try { document.querySelectorAll(`#${uid}-style`).length && document.querySelector(`#${uid}-style`).closest('.item').querySelectorAll('.brand-fields input,.brand-fields select').forEach(t=>{
+    const s2 = document.getElementById(`${src}-${secFieldId(t, uid)}`); if (s2 && s2.value && (!t.value || (t.tagName==='SELECT' && t.selectedIndex===0))) secPut(t, s2.value); }); }
+  finally { secCopying = false; }
+}
+function autoRoom(uid, brand, key){
+  const r = document.getElementById(`${uid}-room`);
+  if (!r.dataset.manual){ r.value = roomFor(brand, key); r.classList.remove('missing'); const f=r.closest('.f'); if (f) f.classList.remove('err'); }
+  return r.value;
+}
+
+/* ---------- Print gate: every field on the order must be filled before it prints ----------
+   Skipped: item notes, dimensions and the auto-filled grade / pattern boxes, disabled or hidden
+   fields, and blank extra items (no brand, nothing typed). Anything missing turns red and the
+   page jumps to the first one. */
+const OPTIONAL = /-(notes|dims|grade|pattern)$/;
+function requiredFields(){
+  const out = ['store','date','ticket','lead','cname','cphone'].map(id=>document.getElementById(id));
+  const items = [...itemsEl.querySelectorAll('.item')];
+  const used = items.filter(it => it.querySelector('select[id$="-brand"]').value ||
+    [...it.querySelectorAll('input,textarea')].some(n => n.value.trim() && !/-qty$/.test(n.id)));
+  (used.length ? used : items.slice(0,1)).forEach(it=>{
+    it.querySelectorAll('input,select,textarea').forEach(n=>{
+      if (n.disabled || OPTIONAL.test(n.id) || n.offsetParent===null) return;
+      out.push(n);
+    });
+  });
+  return out;
+}
+function isMissing(n){
+  const v = (n.value||'').trim();
+  if (!v || n.classList.contains('bad')) return true;
+  if (/-qty$/.test(n.id)) return !(+v > 0);
+  if (n.id==='cphone') return phoneDigits(v).length < 10;
+  if (n.id==='ticket') return !/^\d{7}$/.test(v);
+  if (n.id==='cname') return !nameOK(v);
+  return false;
+}
+/* Phone: always shown as (555) 555-5555, however it's typed — pasted "+1 555.555.5555", "5555555555", etc.
+   Digits past ten are kept as an extension ("x123"). */
+function phoneDigits(v){ let d = String(v).replace(/\D/g,''); if (d.length===11 && d[0]==='1') d = d.slice(1); return d; }
+function fmtPhone(v){
+  const d = phoneDigits(v); if (!d) return '';
+  const a = d.slice(0,3), b = d.slice(3,6), c = d.slice(6,10), x = d.slice(10);
+  if (d.length < 4) return `(${a}`;
+  if (d.length < 7) return `(${a}) ${b}`;
+  return `(${a}) ${b}-${c}` + (x ? ` x${x}` : '');
+}
+(()=>{ const ph = document.getElementById('cphone'); if (!ph) return;
+  ph.setAttribute('inputmode','tel'); ph.placeholder = '(555) 555-5555';
+  ph.addEventListener('input', e=>{
+    const atEnd = ph.selectionStart===ph.value.length;
+    if (e.inputType && e.inputType.startsWith('delete') && !atEnd) return;   // don't fight edits mid-number
+    if (atEnd && !(e.inputType||'').startsWith('delete')) ph.value = fmtPhone(ph.value);
+  });
+  ph.addEventListener('blur', ()=>{ ph.value = fmtPhone(ph.value); });
+})();
+/* Order number: exactly 7 digits (leading zeros kept, e.g. 0116431); anything else is stripped as it's typed */
+(()=>{ const t = document.getElementById('ticket'); if (!t) return;
+  t.addEventListener('input', ()=>{ const v = t.value.replace(/\D/g,'').slice(0,7); if (v!==t.value) t.value = v; });
+})();
+/* Customer name: one box, but it needs a first AND last name (two or more words, each with a letter) */
+function nameOK(v){ return String(v).trim().split(/\s+/).filter(w=>/[A-Za-z\u00C0-\u024F]/.test(w)).length >= 2; }
+/* why a filled-in field still counts as missing — shown under the print message */
+function whyBad(n){
+  const v = (n.value||'').trim(); if (!v) return '';
+  if (n.id==='cname') return 'Customer name needs a first and last name.';
+  if (n.id==='ticket') return 'Order number must be exactly 7 digits.';
+  if (n.id==='cphone') return 'Phone number needs all 10 digits.';
+  return '';
+}
+function tryPrint(){
+  renderPage2();   // fills each item's Room before the check
+  document.querySelectorAll('.missing').forEach(n=>n.classList.remove('missing'));
+  document.querySelectorAll('.f.err').forEach(n=>n.classList.remove('err'));
+  const bad = requiredFields().filter(isMissing);
+  const msg = document.getElementById('print-msg');
+  const secBad = document.querySelector('.p2-sec-err');
+  if (!bad.length && secBad){
+    msg.textContent = 'A sectional on page 2 can\'t be built as entered — fix it before printing.'; msg.hidden = false;
+    secBad.scrollIntoView({behavior:'smooth', block:'center'}); return;
+  }
+  if (bad.length){
+    bad.forEach(n=>{ n.classList.add('missing'); const f=n.closest('.f'); if (f) f.classList.add('err'); });
+    const why = [...new Set(bad.map(whyBad).filter(Boolean))];
+    msg.textContent = `${bad.length} field${bad.length>1?'s':''} still need${bad.length>1?'':'s'} filling in before this can print.` + (why.length ? ' ' + why.join(' ') : '');
+    msg.hidden = false;
+    bad[0].scrollIntoView({behavior:'smooth', block:'center'});
+    setTimeout(()=>bad[0].focus({preventScroll:true}), 250);
+    return;
+  }
+  msg.hidden = true;
+  window.print();
+}
+/* clear a field's red as soon as it's filled; Ctrl/Cmd+P goes through the same check */
+['input','change'].forEach(ev=>document.addEventListener(ev, e=>{
+  const n = e.target; if (!n.classList || !n.classList.contains('missing') || isMissing(n)) return;
+  n.classList.remove('missing'); const f=n.closest('.f'); if (f) f.classList.remove('err');
+  if (!document.querySelector('.missing')) document.getElementById('print-msg').hidden = true;
+}));
+document.addEventListener('keydown', e=>{
+  if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='p'){ e.preventDefault(); tryPrint(); }
+});
+
+function clearForm(){
+  if (!window.confirm('Clear the whole form?')) return;
+  document.querySelectorAll('#sheet input, #sheet select, #sheet textarea').forEach(n=>{
+    if (n.tagName==='SELECT') n.selectedIndex=0; else n.value='';
+  });
+  itemsEl.innerHTML=''; seq=0; leadAuto=true; addItem(); setToday();
+  document.getElementById('print-msg').hidden = true;
+}
+
+function setToday(){
+  const d = new Date(); const p = n=>String(n).padStart(2,'0');
+  document.getElementById('date').value = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+
+setToday();
+addItem();
+</script>
+</body>
+</html>
