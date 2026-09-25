@@ -141,6 +141,8 @@
     .bed-block{padding:6px 10px;margin-top:6px}
     .bed-controls{display:none!important}
     .page2{break-before:page;page-break-before:always}
+    #copy2{display:block!important}
+    #copy2>.sheet:first-child{break-before:page;page-break-before:always}
     .p2-grid{grid-template-columns:repeat(3,1fr)}
     .p2-room h3{margin-top:10px;break-after:avoid;page-break-after:avoid}
     .p2-room{break-inside:avoid;page-break-inside:avoid}
@@ -193,6 +195,7 @@
   </div>
 </main>
 <main class="sheet page2" id="page2" hidden></main>
+<div id="copy2" style="display:none" aria-hidden="true"></div>
 
 <script src="skus.js"></script>
 <script>
@@ -875,11 +878,11 @@ function renumber(){
 
 /* ---------- Print: hide empty fields & unused items so the customer copy is clean ---------- */
 window.addEventListener('beforeprint',()=>{
-  document.querySelectorAll('.item').forEach(item=>{
+  document.querySelectorAll('#sheet .item').forEach(item=>{
     const brand = item.querySelector('select[id$="-brand"]');
     item.classList.toggle('hide-print', !brand.value);
   });
-  document.querySelectorAll('.item .f').forEach(f=>{
+  document.querySelectorAll('#sheet .item .f').forEach(f=>{
     const inp = f.querySelector('input,select,textarea');
     if (!inp) return;
     if (inp.tagName==='TEXTAREA'){ inp.style.height='auto'; inp.style.height = inp.scrollHeight+'px'; }
@@ -1732,7 +1735,7 @@ function tryPrint(){
   document.querySelectorAll('.f.err').forEach(n=>n.classList.remove('err'));
   const bad = requiredFields().filter(isMissing);
   const msg = document.getElementById('print-msg');
-  const secBad = document.querySelector('.p2-sec-err');
+  const secBad = document.querySelector('#page2 .p2-sec-err');
   if (!bad.length && secBad){
     msg.textContent = 'A sectional on page 2 can\'t be built as entered — fix it before printing.'; msg.hidden = false;
     secBad.scrollIntoView({behavior:'smooth', block:'center'}); return;
@@ -1775,6 +1778,30 @@ function setToday(){
 
 setToday();
 addItem();
+
+/* ---------- Two copies per print (Zach 9/25) ----------
+   A page can't set the print dialog's copy count, so the whole order (page 1 + the drawings page) is
+   duplicated into #copy2 just before printing and removed afterwards. Registered last so it runs after
+   the other beforeprint handlers (hidden empty fields, page 2 rebuild) and copies their result. */
+function buildCopy2(){
+  const host = document.getElementById('copy2'); host.innerHTML = '';
+  ['sheet','page2'].forEach(id=>{
+    const src = document.getElementById(id); if (!src || src.hidden) return;
+    const c = src.cloneNode(true);
+    const a = src.querySelectorAll('input,select,textarea'), b = c.querySelectorAll('input,select,textarea');
+    a.forEach((n,i)=>{ const m = b[i];
+      if (n.tagName==='SELECT'){ [...m.options].forEach((o,j)=>{ if (j===n.selectedIndex) o.setAttribute('selected',''); else o.removeAttribute('selected'); }); }
+      else if (n.tagName==='TEXTAREA'){ m.textContent = n.value; m.style.height = n.style.height; }
+      else if (n.type==='checkbox' || n.type==='radio'){ if (n.checked) m.setAttribute('checked',''); }
+      else m.setAttribute('value', n.value);
+    });
+    c.removeAttribute('id'); c.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
+    c.querySelectorAll('label[for]').forEach(n=>n.removeAttribute('for'));
+    host.appendChild(c);
+  });
+}
+window.addEventListener('beforeprint', buildCopy2);
+window.addEventListener('afterprint', ()=>{ document.getElementById('copy2').innerHTML = ''; });
 </script>
 </body>
 </html>
