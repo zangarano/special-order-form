@@ -1196,7 +1196,17 @@ function pieceBody(P, e, W, D, k, ov){
     out += P.path(pts([['M',D*0.36,D],['Q',[W*0.5,J+2],[W,J]]]), 'stroke-width="2.2"');
     return out;
   }
-  if (arms==='corner' && /Rounded|Super Wedge/i.test(e.d)){  // curved corner: quarter-round back, one curved seat
+  if (arms==='corner' && /Super Wedge/i.test(e.d)){
+    /* England Super Wedge (Malibu / Thomas / Seneca tear sheets): a fan — the whole outer back is a quarter circle
+       centred on the inside corner, and the seat front is a straight diagonal between the two joining pieces' fronts */
+    const b = Math.min(9, D*0.25), jd = Math.min(W - 2, ((sizeOf(k)||[])[1]) || D), r = W - b, c = 0.7, K = 0.5523;   // K: cubic Bézier quarter circle (P.path scales every number, so no arc flags)
+    let out = P.path(`M0 0 C${W*K} 0 ${W} ${W-W*K} ${W} ${W} L${W-jd} ${W} L0 ${jd} Z`);
+    out += P.path(`M0 ${b} C${r*K} ${b} ${r} ${W-r*K} ${r} ${W}`);
+    if (!(ov.seats===0) && (SEATS[k] || ov.seats))
+      out += P.path(`M${c} ${b+c} C${(r-c)*K} ${b+c} ${r-c} ${W-(r-c)*K} ${r-c} ${W-c} L${W-jd+c*1.4} ${W-c} L${c} ${jd-c*1.4} Z`);
+    return out + P.line(0, jd, W-jd, W, 'stroke-width="2.2"');
+  }
+  if (arms==='corner' && /Rounded/i.test(e.d)){  // La-Z-Boy rounded corner: quarter-round back, one curved seat
     const b = Math.min(9, D*0.25);
     return P.path(`M0 0 L0 ${D} L${W} ${D} L${W} ${D*0.62} Q${W} 0 ${W*0.38} 0 Z`) +
       P.path(`M0 ${b} L${W*0.38} ${b} Q${W-b} ${b} ${W-b} ${D*0.62} L${W-b} ${D}`) +
@@ -1425,7 +1435,8 @@ function sectionalSVG(pieces, s, flip, force, floats, fside){
 function scaleT(t, s){ return t.replace(/translate\(([-\d.]+),([-\d.]+)\)/, (m,a,b)=>`translate(${(+a*s).toFixed(1)},${(+b*s).toFixed(1)})`); }
 function upholsterySVG(k, s){
   const e = SKUS[k], sz = sizeOf(k); if (!e || !sz) return null;
-  const [W, D] = sz;
+  let [W, D] = sz;
+  if (/Super Wedge/i.test(e.d)) W = D = Math.max(D, W/Math.SQRT2);   // on its own, draw it at its true corner size, not 67 × 38
   return svgWrap(W, D, pieceBody(Pen(s), e, W, D, k), s);
 }
 
