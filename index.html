@@ -901,7 +901,29 @@ window.addEventListener('afterprint',()=>{
 const DR = {
   stroke: 'var(--ink)', thin: 0.9, med: 1.3,
 };
-function svgWrap(w, h, body, s){
+/* Tear-sheet style overall measurements: a width line across the top and a depth/height line down the right,
+   arrow-ended, with the size in inches. x0..y1 are the drawing's edges in px; returns extra markup + the margins it needs. */
+function dimLines(x0, y0, x1, y1, wTxt, hTxt){
+  const fs = 10, top = 16, gap = 8, rw = hTxt ? gap + 6 + hTxt.length*5.8 : 0;
+  const ar = (x, y, dx, dy) => `<path d="M${x} ${y} l${(dx*5 - dy*2.5).toFixed(1)} ${(dy*5 + dx*2.5).toFixed(1)} M${x} ${y} l${(dx*5 + dy*2.5).toFixed(1)} ${(dy*5 - dx*2.5).toFixed(1)}"/>`;
+  const lab = (x, y, t, a) => (a==='middle' ? `<rect x="${(x - t.length*2.9 - 3).toFixed(1)}" y="${(y-9).toFixed(1)}" width="${(t.length*5.8 + 6).toFixed(1)}" height="12" fill="var(--paper)" stroke="none"/>` : '') + `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" fill="currentColor" stroke="var(--paper)" stroke-width="3" paint-order="stroke" font-size="${fs}" font-weight="700" text-anchor="${a}">${t}</text>`;
+  let out = '<g class="dim" stroke-width="0.8">';
+  if (wTxt){ const y = y0 - top/2 - 2, cx = (x0+x1)/2;
+    out += `<line x1="${x0}" y1="${y0-top}" x2="${x0}" y2="${y0-3}"/><line x1="${x1}" y1="${y0-top}" x2="${x1}" y2="${y0-3}"/>`+
+      `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}"/>` + ar(x0, y, 1, 0) + ar(x1, y, -1, 0) + lab(cx, y + 3.5, wTxt, 'middle'); }
+  if (hTxt){ const x = x1 + gap;
+    out += `<line x1="${x1+3}" y1="${y0}" x2="${x+4}" y2="${y0}"/><line x1="${x1+3}" y1="${y1}" x2="${x+4}" y2="${y1}"/>`+
+      `<line x1="${x}" y1="${y0}" x2="${x}" y2="${y1}"/>` + ar(x, y0, 0, 1) + ar(x, y1, 0, -1) + lab(x + 5, (y0+y1)/2 + 3.5, hTxt, 'start'); }
+  return {svg: out + '</g>', top: wTxt ? top + 2 : 0, right: rw};
+}
+const dimTxt = v => `${Math.ceil(v - 0.05)}″`;   // whole inches, rounded up (Zach 9/26) — matches the tear sheets
+function svgWrap(w, h, body, s, dims){
+  if (dims){
+    const d = dimLines(0, 0, +(w*s).toFixed(1), +(h*s).toFixed(1), dims[0], dims[1]);
+    const vw = w*s + 4 + d.right, vh = h*s + 4 + d.top;
+    return `<svg class="piece-svg" viewBox="${-2} ${-2-d.top} ${vw.toFixed(1)} ${vh.toFixed(1)}" width="${vw.toFixed(1)}" height="${vh.toFixed(1)}" xmlns="http://www.w3.org/2000/svg">`+
+      `<g fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round">${body}${d.svg}</g></svg>`;
+  }
   return `<svg class="piece-svg" viewBox="${-2} ${-2} ${w*s+4} ${h*s+4}" width="${w*s+4}" height="${h*s+4}" xmlns="http://www.w3.org/2000/svg">`+
     `<g fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round">${body}</g></svg>`;
 }
@@ -1428,7 +1450,9 @@ function sectionalSVG(pieces, s, flip, force, floats, fside){
   });
   pts.filter(({p})=>!p.half || p.half==='seg').forEach(({box,p})=>{ body += `<g class="sec-lab">${P.text((box[0]+box[2])/2, (box[1]+box[3])/2 + 1.5, esc(p.k), 'font-size="8" paint-order="stroke" stroke="var(--paper)" stroke-width="3"')}</g>`; });
   const W = maxX-minX, H = maxY-minY;
-  const svg = `<svg class="piece-svg" viewBox="${(minX*s-2).toFixed(1)} ${(minY*s-2).toFixed(1)} ${(W*s+4).toFixed(1)} ${(H*s+4).toFixed(1)}" width="${(W*s+4).toFixed(1)}" height="${(H*s+4).toFixed(1)}" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round">${body}</g></svg>`;
+  const d = dimLines(+(minX*s).toFixed(1), +(minY*s).toFixed(1), +(maxX*s).toFixed(1), +(maxY*s).toFixed(1), dimTxt(W), dimTxt(H));
+  const vw = W*s + 4 + d.right, vh = H*s + 4 + d.top;
+  const svg = `<svg class="piece-svg" viewBox="${(minX*s-2).toFixed(1)} ${(minY*s-2-d.top).toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}" width="${vw.toFixed(1)}" height="${vh.toFixed(1)}" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round">${body}${d.svg}</g></svg>`;
   return {svg, W, H};
 }
 /* translate()/rotate() are written in inches; convert the translate part to px */
@@ -1581,7 +1605,7 @@ function sectionalCard(items, s){
   const optsSame = items.every(x=>x.opts.join('|')===first.opts.join('|'));
   const ft = v => inchTxt(Math.round(v*8)/8);
   let draw = '', dims = '';
-  if (!A.errors.length){ const r = sectionalSVG(A.ordered, s * 420/190, A.st.flip, A.force, A.floats, A.st.fside); draw = r.svg; dims = `Overall about ${ft(r.W)}"W × ${ft(r.H)}"D`; }
+  if (!A.errors.length){ const r = sectionalSVG(A.ordered, s * 420/190, A.st.flip, A.force, A.floats, A.st.fside); draw = r.svg; dims = `Overall about ${Math.ceil(r.W - 0.05)}"W × ${Math.ceil(r.H - 0.05)}"D`; }
   /* rearrange bar (screen only): ends are locked, middle pieces drag (or use the arrows on a tablet) */
   const chip = (p, lock) => `<span class="sec-chip${lock ? ' lock' : ''}" ${lock ? '' : `draggable="true" data-g="${gk}" data-id="${p.id}"`}>`+
     (lock ? '' : `<button type="button" class="mv" data-g="${gk}" data-id="${p.id}" data-d="-1" aria-label="Move left">◀</button>`)+
