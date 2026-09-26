@@ -1167,6 +1167,7 @@ function armsFor(e){
   if (isCorner(e)) return 'corner';
   if (/Bumper|Sofa Chaise/i.test(d)) return 'outline';
   if (/Cuddler/i.test(d)) return /\bRAF\b/.test(d) ? 'R' : 'L';
+  if (/w\/ Console/i.test(d)) return 'both';                      // La-Z-Boy console loveseat: arms both ends, console in the middle
   if (/Ottoman|Console|Storage/i.test(d)) return 'none';
   if (/Left[- ]Arm Sitting|\bLSS\b/i.test(d)) return 'R';          // sitting-left arm = on your right when facing
   if (/Right[- ]Arm Sitting|\bRSS\b/i.test(d)) return 'L';
@@ -1201,7 +1202,7 @@ function cushions(P, k, x0, y0, x1, y1){
 /* piece body in its own frame: width along x, back at y=0, front at y=D */
 function pieceBody(P, e, W, D, k, ov){
   ov = ov || {};
-  const arms = ov.arms || armsFor(e), ottoman = /Ottoman|Console|Storage/i.test(e.d), back = ottoman ? 0 : Math.min(9, D*0.25), arm = 6;
+  const arms = ov.arms || armsFor(e), withCon = /w\/ Console/i.test(e.d), ottoman = !withCon && /Ottoman|Console|Storage/i.test(e.d), back = ottoman ? 0 : Math.min(9, D*0.25), arm = 6;
   if (/Bumper/i.test(e.d)){   // open end: back only along the joined ~58%, no arm (Beckham booklet)
     const b = Math.min(9, D*0.25), rightEnd = endSide(e)==='R', bw = W*0.58;
     return P.rect(0, 0, W, D) + P.rect(rightEnd ? 0 : W-bw, 0, bw, b) + P.line(0, D, W, D, 'stroke-width="2.2"');
@@ -1253,7 +1254,12 @@ function pieceBody(P, e, W, D, k, ov){
     if (back) out += P.rect(0, 0, W, back);
     if (arms==='both' || arms==='L'){ out += P.rect(0, back, arm, D-back); xa = arm; }
     if (arms==='both' || arms==='R'){ out += P.rect(W-arm, back, arm, D-back); xb = W-arm; }
-    if (!ottoman) out += cushions(P, ov.seats!=null ? `__${ov.seats}` : k, xa, back, xb, D);
+    if (withCon){   // La-Z-Boy console loveseat: a seat each side of a center console (~15" — 449 vs 448 widths)
+      const cw = Math.min(15, (xb-xa)*0.24), cx = xa + (xb-xa-cw)/2, n = (typeof SEATS!=='undefined' && SEATS[k]) || 2, h = Math.max(1, Math.round(n/2));
+      out += P.rect(cx, back, cw, D-back) + P.line(cx+1.5, back+2.5, cx+cw-1.5, back+2.5);
+      out += cushions(P, `__${h}`, xa, back, cx, D) + cushions(P, `__${Math.max(1, n-h)}`, cx+cw, back, xb, D);
+    }
+    else if (!ottoman) out += cushions(P, ov.seats!=null ? `__${ov.seats}` : k, xa, back, xb, D);
   }
   out += P.line(0, D, W, D, 'stroke-width="2.2"');
   return out;
@@ -1655,36 +1661,47 @@ let p2t; const queuePage2 = () => { clearTimeout(p2t); p2t = setTimeout(renderPa
 ['input','change'].forEach(ev=>document.addEventListener(ev, queuePage2));
 window.addEventListener('beforeprint', renderPage2);
 
-/* ---------- Sectional pieces share their selections (Zach 9/24: copy, but the rep may change one) ----------
-   Pieces of one sectional = same brand + series + room. A new piece starts with the first piece's selections;
+/* ---------- Matching pieces share their selections (Zach 9/24: copy, but the rep may change one) ----------
+   Matching pieces = same brand + series + room: a sectional's pieces, and (Zach 9/26) a matching set too —
+   e.g. La-Z-Boy Morrison 444766 sofa + 449766 console loveseat + 010766 recliner all take the sofa's cover. A new piece starts with the first piece's selections;
    changing the FIRST piece copies to the others that still match what it replaced. Changing any other piece
    changes only that piece, so a rep can deliberately mix. A field a piece doesn't have is skipped,
    and a select only takes values it actually offers. */
+/* which set a piece belongs to: La-Z-Boy by its 3-digit series, Bassett by its style number (3849 = Carolina Track Arm),
+   England by collection name — England numbers a set's sofa / loveseat / chair differently (Monroe 1435 / 1436 / 1434) */
+function setKey(b, k){
+  if (b==='England'){ const w = ((SKUS[k]||{}).d||'').split(' ')[0]; if (w && !/^(EZ|Rocker|Reclining)$/i.test(w)) return b+'|'+w; }
+  return b+'|'+seriesKey(b, k);
+}
 function secMates(uid){
   const key = findSku(document.getElementById(`${uid}-style`).value); const e = key && SKUS[key];
-  if (!e || e.b==='Archbold' || !isSecPiece(e)) return [];
-  const sk = e.b+'|'+seriesKey(e.b, key), room = autoRoom(uid, e.b, key);
+  if (!e || e.b==='Archbold') return [];
+  const sk = setKey(e.b, key), room = autoRoom(uid, e.b, key);
   return [...itemsEl.querySelectorAll('.item')].map(it=>it.querySelector('select[id$="-brand"]').id.replace(/-brand$/,''))
     .filter(u=>u!==uid).filter(u=>{ const k = findSku(document.getElementById(`${u}-style`).value), x = k && SKUS[k];
-      return x && x.b!=='Archbold' && isSecPiece(x) && x.b+'|'+seriesKey(x.b, k)===sk && autoRoom(u, x.b, k)===room; });
+      return x && x.b!=='Archbold' && setKey(x.b, k)===sk && autoRoom(u, x.b, k)===room; });
 }
 let secCopying = false;
 function secPut(n, v){
   if (n.tagName==='SELECT' && ![...n.options].some(o=>o.value===v)) return false;
+  /* a cover this piece isn't made in (e.g. a leather-only piece in a fabric set) is left for the rep, not cleared with a warning */
+  const dl = n.list; if (dl && ![...dl.options].some(o=>o.value===v)) return false;
   n.value = v; n.dataset.prev = v;
   n.dispatchEvent(new Event('input', {bubbles:true})); n.dispatchEvent(new Event('change', {bubbles:true}));
   return true;
 }
 const secFieldId = (n, uid) => n.id.slice(uid.length+1);
+const secDerived = fid => /^(pattern|grade)$/.test(fid);   // filled from the cover itself — never copied on their own
 document.addEventListener('focusin', e=>{ const n = e.target; if (n.closest && n.closest('.brand-fields') && n.id) n.dataset.prev = n.value; });
 document.addEventListener('change', e=>{
   const n = e.target; if (secCopying || !n.closest || !n.closest('.brand-fields') || !n.id) return;
   const uid = n.id.split('-')[0], fid = secFieldId(n, uid), prev = n.dataset.prev || '', v = n.value;
   n.dataset.prev = v; if (v===prev) return;
-  /* only the sectional's first piece (as entered) leads; editing any other piece changes just that piece */
+  /* only the set's first piece (as entered) leads; editing any other piece changes just that piece */
   const mates = secMates(uid); if (!mates.length) return;
   const order = [...itemsEl.querySelectorAll('.item')].map(it=>it.querySelector('select[id$="-brand"]').id.replace(/-brand$/,''));
   if (mates.some(u=>order.indexOf(u) < order.indexOf(uid))) return;
+  if (secDerived(fid)) return;
   secCopying = true;
   try { secMates(uid).forEach(u=>{ const t = document.getElementById(`${u}-${fid}`); if (t && (t.value==='' || t.value===prev)) secPut(t, v); }); }
   finally { secCopying = false; }
@@ -1693,7 +1710,7 @@ function secFillFrom(uid){
   const src = secMates(uid)[0]; if (!src) return;
   secCopying = true;
   try { document.querySelectorAll(`#${uid}-style`).length && document.querySelector(`#${uid}-style`).closest('.item').querySelectorAll('.brand-fields input,.brand-fields select').forEach(t=>{
-    const s2 = document.getElementById(`${src}-${secFieldId(t, uid)}`); if (s2 && s2.value && (!t.value || (t.tagName==='SELECT' && t.selectedIndex===0))) secPut(t, s2.value); }); }
+    if (secDerived(secFieldId(t, uid))) return; const s2 = document.getElementById(`${src}-${secFieldId(t, uid)}`); if (s2 && s2.value && (!t.value || (t.tagName==='SELECT' && t.selectedIndex===0))) secPut(t, s2.value); }); }
   finally { secCopying = false; }
 }
 function autoRoom(uid, brand, key){
