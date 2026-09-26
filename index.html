@@ -378,8 +378,12 @@ function brandCovers(kind){
   return out;
 }
 const HAS_SKUS = typeof SKUS !== 'undefined';
+/* CB Power Bundle (Zach 9/26): an upgrade on La-Z-Boy console loveseats — Storis type "Power Bundle", default "NO - No Power".
+   Not in the V3 upgrades sheet skus.js was built from, so it's added here. The console gets a charging bolt on page 2 when CB is picked. */
+if (HAS_SKUS) for (const k in SKUS){ const e = SKUS[k];
+  if (e.b==='La-Z-Boy' && /w\/ Console/i.test(e.d)){ e.o = e.o || {}; if (!e.o.PowerBundle) e.o.PowerBundle = ['NO - No Power','CB - Power Bundle']; } }
 const OPT_LABELS = {ContourSeat:'Contour cushion', SwivelBase:'Swivel base', Handle:'Handle',
-  RemoteChoice:'Remote', WirelessRemote:'Remote', BassettCushio:'Seat cushion', BassettBack:'Back cushion',
+  RemoteChoice:'Remote', WirelessRemote:'Remote', PowerBundle:'Power bundle', BassettCushio:'Seat cushion', BassettBack:'Back cushion',
   BassettNail:'Nailhead', BassettFeet:'Feet finish',
   Finish:'Finish', Hardware:'Hardware', Fabric:'Headboard fabric',
   EngCushion:'Seat cushion', EngFrame:'Frame'};
@@ -1257,6 +1261,10 @@ function pieceBody(P, e, W, D, k, ov){
     if (withCon){   // La-Z-Boy console loveseat: a seat each side of a center console (~15" — 449 vs 448 widths)
       const cw = Math.min(15, (xb-xa)*0.24), cx = xa + (xb-xa-cw)/2, n = (typeof SEATS!=='undefined' && SEATS[k]) || 2, h = Math.max(1, Math.round(n/2));
       out += P.rect(cx, back, cw, D-back) + P.line(cx+1.5, back+2.5, cx+cw-1.5, back+2.5);
+      if (ov.cb){   // CB Power Bundle: charging bolt on the console lid
+        const mx = cx+cw/2, my = back+(D-back)*0.55, z = Math.min(cw*0.32, 4.5);
+        out += P.path(`M${mx+z*0.25} ${my-z*1.5} L${mx-z*0.75} ${my+z*0.15} L${mx-z*0.05} ${my+z*0.15} L${mx-z*0.35} ${my+z*1.5} L${mx+z*0.8} ${my-z*0.35} L${mx+z*0.05} ${my-z*0.35} Z`, 'fill="currentColor" stroke="none"');
+      }
       out += cushions(P, `__${h}`, xa, back, cx, D) + cushions(P, `__${Math.max(1, n-h)}`, cx+cw, back, xb, D);
     }
     else if (!ottoman) out += cushions(P, ov.seats!=null ? `__${ov.seats}` : k, xa, back, xb, D);
@@ -1463,11 +1471,11 @@ function sectionalSVG(pieces, s, flip, force, floats, fside){
 }
 /* translate()/rotate() are written in inches; convert the translate part to px */
 function scaleT(t, s){ return t.replace(/translate\(([-\d.]+),([-\d.]+)\)/, (m,a,b)=>`translate(${(+a*s).toFixed(1)},${(+b*s).toFixed(1)})`); }
-function upholsterySVG(k, s){
+function upholsterySVG(k, s, ov){
   const e = SKUS[k], sz = sizeOf(k); if (!e || !sz) return null;
   let [W, D] = sz;
   if (/Super Wedge/i.test(e.d)) W = D = Math.max(D, W/Math.SQRT2);   // on its own, draw it at its true corner size, not 67 × 38
-  return svgWrap(W, D, pieceBody(Pen(s), e, W, D, k), s);
+  return svgWrap(W, D, pieceBody(Pen(s), e, W, D, k, ov), s);
 }
 
 /* ---------- Page 2: what's being ordered, room by room ----------
@@ -1519,7 +1527,7 @@ function drawingFor(x, s){
   if (typeof LAYOUTS==='undefined') return null;
   if (x.parts) return bedSVG(x.parts, s);
   if (!x.key) return null;
-  return x.brand==='Archbold' ? pieceSVG(x.key, s) : upholsterySVG(x.key, s);
+  return x.brand==='Archbold' ? pieceSVG(x.key, s) : upholsterySVG(x.key, s, {cb: x.opts.some(o=>/^Power bundle: CB\b/.test(o))});
 }
 function renderPage2(){
   const host = document.getElementById('page2'); if (!host) return;
