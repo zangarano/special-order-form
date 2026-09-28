@@ -1239,6 +1239,18 @@ function pieceBody(P, e, W, D, k, ov){
       P.path(`M0 ${b} L${W*0.38} ${b} Q${W-b} ${b} ${W-b} ${D*0.62} L${W-b} ${D}`) +
       (ov.seats===0 || !(SEATS[k] || ov.seats) ? '' : P.path(`M0.7 ${b+0.7} L${W*0.36} ${b+0.7} Q${W-b-0.7} ${b+0.7} ${W-b-0.7} ${D*0.64} L${W-b-0.7} ${D-0.7} Q${W*0.4} ${D-0.7} 0.7 ${b+0.7} Z`));
   }
+  const J = arms==='corner' ? Math.min(D, ov.jd || D) : D;
+  if (arms==='corner' && J < D - 0.5 && !/Rounded/i.test(e.d)){
+    /* Zach 2026-09-28: a square corner bigger than the pieces it joins (Bassett Carolina -34 = 45.5 sq, pieces 37 deep;
+       Bassett's 99 × 99 L = 53 + 45.5) keeps its published outer size, but its front is notched so the seat fronts run
+       flush with the joining pieces instead of the corner jutting out. Joining faces: left (x=0, y 0..J), bottom (y=D, x W-J..W). */
+    const b = Math.min(9, J*0.25), n = W - J, c = 0.7;
+    let out = P.path(`M0 0 L${W} 0 L${W} ${D} L${n} ${D} L${n} ${J} L0 ${J} Z`);
+    out += P.path(`M0 ${b} L${W-b} ${b} L${W-b} ${D}`);
+    if (!(ov.seats===0) && (SEATS[k] || ov.seats))
+      out += P.path(`M${c} ${b+c} L${W-b-c} ${b+c} L${W-b-c} ${D-c} L${n+c} ${D-c} L${n+c} ${J-c} L${c} ${J-c} Z`);
+    return out + P.path(`M0 ${J} L${n} ${J} L${n} ${D}`, 'stroke-width="2.2"');
+  }
   let out = P.rect(0, 0, W, D);
   if (arms==='corner'){  // back runs along the two outer sides (top, and the side the run turns on)
     const b = Math.min(9, D*0.25);
@@ -1455,7 +1467,12 @@ function sectionalSVG(pieces, s, flip, force, floats, fside){
     const box = rot===0 || corner==='TL' ? [x, y, x+p.W, y+p.D] : rot===90 ? [x-p.D, y, x, y+p.W] : [x, y-p.W, x+p.D, y];
     minX=Math.min(minX,box[0]); minY=Math.min(minY,box[1]); maxX=Math.max(maxX,box[2]); maxY=Math.max(maxY,box[3]);
     pts.push({box, p});
-    body += `<g transform="${scaleT(t, s)}">${pieceBody(P, p.e, p.W, p.D, p.k, p.ov)}</g>`;
+    let ov = p.ov;
+    if (p.corner){   // how deep the pieces it joins are — a bigger corner gets a notched front so the fronts line up
+      const i = pieces.indexOf(p), nb = [pieces[i-1], pieces[i+1]].filter(q=>q && !q.corner);
+      if (nb.length) ov = {...(ov||{}), jd: Math.max(...nb.map(q=>q.D))};
+    }
+    body += `<g transform="${scaleT(t, s)}">${pieceBody(P, p.e, p.W, p.D, p.k, ov)}</g>`;
   });
   extra.forEach(({f,x,y})=>{
     const box = [x, y, x+f.W, y+f.D]; minX=Math.min(minX,box[0]); minY=Math.min(minY,box[1]); maxX=Math.max(maxX,box[2]); maxY=Math.max(maxY,box[3]);
