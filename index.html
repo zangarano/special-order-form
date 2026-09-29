@@ -2159,22 +2159,30 @@ function orderPayload(){
       customer:{name:v('cname'), phone:v('cphone'), email:v('cemail')}, items};
   });
 }
-/* Turnstile (bot check) — only once a site key is set above */
-let tsWidget = null, tsWait = null;
+/* Turnstile (bot check) — only once a site key is set above.
+   The check takes several seconds, so it runs as soon as the page opens and keeps a fresh pass ready;
+   Print uses it and a new one is fetched in the background for the next print. */
+let tsWidget = null, tsCur = '', tsWaiters = [];
+function tsInit(){
+  if (!TURNSTILE_SITEKEY || !window.turnstile || tsWidget!==null) return;
+  const box = el('div',{class:'no-print',style:'position:fixed;bottom:12px;right:12px;z-index:9'}); document.body.appendChild(box);
+  tsWidget = turnstile.render(box, {sitekey:TURNSTILE_SITEKEY, appearance:'interaction-only',
+    callback:t=>{ tsCur = t; tsWaiters.splice(0).forEach(f=>f(t)); },
+    'expired-callback':()=>{ tsCur = ''; turnstile.reset(tsWidget); },
+    'error-callback':()=>{ tsCur = ''; return true; }});
+}
 function tsToken(){
   if (!TURNSTILE_SITEKEY || !window.turnstile) return Promise.resolve('');
+  tsInit();
+  const take = t=>{ tsCur = ''; setTimeout(()=>{ try { turnstile.reset(tsWidget); } catch(e){} }, 0); return t; };
+  if (tsCur) return Promise.resolve(take(tsCur));
   return new Promise(res=>{
-    tsWait = res;
-    if (tsWidget===null){
-      const box = el('div',{class:'no-print',style:'position:fixed;bottom:12px;right:12px;z-index:9'}); document.body.appendChild(box);
-      tsWidget = turnstile.render(box, {sitekey:TURNSTILE_SITEKEY, execution:'execute', appearance:'interaction-only',
-        callback:t=>{ const f = tsWait; tsWait = null; if (f) f(t); }, 'error-callback':()=>{ const f = tsWait; tsWait = null; if (f) f(''); }});
-    } else turnstile.reset(tsWidget);
-    turnstile.execute(tsWidget);
-    setTimeout(()=>{ const f = tsWait; tsWait = null; if (f) f(''); }, 8000);
+    const f = t=>{ clearTimeout(to); res(take(t)); };
+    const to = setTimeout(()=>{ tsWaiters = tsWaiters.filter(x=>x!==f); res(''); }, 25000);
+    tsWaiters.push(f);
   });
 }
-if (TURNSTILE_SITEKEY){ const sc = document.createElement('script'); sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; sc.async = true; document.head.appendChild(sc); }
+if (TURNSTILE_SITEKEY){ const sc = document.createElement('script'); sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; sc.async = true; sc.onload = tsInit; document.head.appendChild(sc); }
 async function saveOrder(keepalive){
   const body = orderPayload();
   if (!body.items.length) throw new Error('no items');
