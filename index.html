@@ -153,6 +153,11 @@
   /* ---------- Step-by-step entry (the V4 layout, main version since 2026-09-29) ----------
      One item and one step at a time; the printout is a written summary, drawings on page 2. */
   body.v4:not(.v4-check) .v4-off{display:none!important}
+  /* bed parts: headboard over footboard on the left, pedestals on the right */
+  .bed-controls:has(.bed-p1) .bed-hb,.bed-controls:has(.bed-p1) .bed-fb{grid-column:1 / span 3}
+  .bed-controls:has(.bed-p1) .bed-p1,.bed-controls:has(.bed-p1) .bed-p2{grid-column:4 / span 3}
+  @media (max-width:640px){ .bed-controls:has(.bed-p1) .bed-hb,.bed-controls:has(.bed-p1) .bed-fb{grid-column:1} .bed-controls:has(.bed-p1) .bed-p1,.bed-controls:has(.bed-p1) .bed-p2{grid-column:2} }
+  input.auto{pointer-events:none;background:transparent;border-style:dashed;color:var(--ink)}
   body.v4 .item-head,body.v4 .items-wrap ~ .no-print{display:none!important}
   body.v4 .item{border:none;padding:0;background:none!important;margin:0}
   #v4sum{display:none}
@@ -197,7 +202,7 @@
       <div class="f"><label for="store">Store</label>
         <select id="store"><option value=""></option><option>Greece</option><option>Henrietta</option></select></div>
       <div class="f"><label for="date">Date</label><input id="date" type="date"></div>
-      <div class="f"><label for="lead">Est. lead time</label><input id="lead" placeholder="Auto from brand"></div>
+      <div class="f"><label for="lead">Est. lead time</label><input id="lead" class="auto" placeholder="Auto from brand" readonly tabindex="-1"></div>
     </div>
   </header>
 
@@ -513,6 +518,8 @@ function skuFields(key, uid){
     g.appendChild(cw);
     g.appendChild(field({id:'pattern',label: e.b==='La-Z-Boy' ? 'Pattern name' : 'Pattern · color',span:2},uid));
     if (e.b!=='La-Z-Boy') g.appendChild(field({id:'grade',label:'Grade',span:1},uid));
+    /* filled from the cover pick — not typed */
+    g.querySelectorAll(`#${uid}-pattern, #${uid}-grade`).forEach(n=>{ n.readOnly = true; n.tabIndex = -1; n.classList.add('auto'); });
   }
   /* England toss pillows: one fabric pick per pillow, from the pillow-eligible list (no leather/vinyl) */
   if (e.p && typeof ENG_PILLOW_SET!=='undefined'){
@@ -649,7 +656,7 @@ function bedBuilder(key, e, uid){
     if (pins.size) opts = opts.filter(o=>pins.has(o[0]));
     if (opts.length===1) blank = false;
     if (!opts.some(o=>o[0]===st[k])) st[k] = (!blank && opts.length) ? opts[0][0] : '';
-    const w = el('div',{class:`f s${span}`});
+    const w = el('div',{class:`f s${span} bed-${k}`});
     const s = el('select',{id:`${uid}-bed-${k}`});
     if (blank) s.appendChild(el('option',{value:'',text:''}));
     opts.forEach(([v,t])=>s.appendChild(el('option',{value:v,text:t})));
@@ -721,11 +728,12 @@ function bedBuilder(key, e, uid){
       if (z){
         sel('height','Height', Object.keys(C.ped[z]).filter(h=>(C.hb[z]||{})[h]).map(h=>[h,h]), 2, false);
         const h = st.height;
-        sel('p1','Pedestal 1', skuOpts(C.ped[z][h]), 3);
-        sel('p2','Pedestal 2', skuOpts(C.ped[z][h]), 3);
+        /* two columns: headboard over footboard on the left, pedestal 1 over pedestal 2 on the right */
         sel('hb','Headboard', skuOpts(C.hb[z][h]), 3);
+        sel('p1','Pedestal 1', skuOpts(C.ped[z][h]), 3);
         /* tall Shaker footboards pair with either height; low footboards only with low pedestals */
         sel('fb','Footboard', skuOpts((C.fb[z].Tall||[]).concat(h==='Low' ? (C.fb[z].Low||[]) : [])), 3);
+        sel('p2','Pedestal 2', skuOpts(C.ped[z][h]), 3);
         if (st.p1 && st.p2 && st.hb && st.fb){
           const sp = z==='Twin' ? null : (C.spacer[`${z}|${h}`] || C.spacer[z]);
           parts = [st.hb, st.fb, st.p1, st.p2].concat(sp ? [sp] : []);
@@ -740,9 +748,10 @@ function bedBuilder(key, e, uid){
       sel('size','Size', SIZES.filter(z=>(E.ped[z]||[]).length && (E.hb[z]||[]).length).map(z=>[z,z]), 2);
       const z = st.size;
       if (z){
+        /* two columns: headboard over footboard on the left, pedestal 1 over pedestal 2 on the right */
         sel('hb','Headboard', skuOpts(E.hb[z]), 3);
-        sel('fb','Footboard', skuOpts(E.fb[z]), 3);
         sel('p1','Pedestal 1', skuOpts(E.ped[z]), 3);
+        sel('fb','Footboard', skuOpts(E.fb[z]), 3);
         sel('p2','Pedestal 2', skuOpts(E.ped[z]), 3);
         if (st.hb && st.fb && st.p1 && st.p2){
           const boxed = BEDS.boxed[`${st.hb}|${st.fb}`];
@@ -847,6 +856,7 @@ function addItem(){
     field({id:'room',label:'Room',type:'select',span:3,options:[''].concat(ROOMS)},uid)
   ]);
   const dimsIn = itemNotes.querySelector(`#${uid}-dims`);
+  dimsIn.readOnly = true; dimsIn.tabIndex = -1; dimsIn.classList.add('auto');
   const roomIn = itemNotes.querySelector(`#${uid}-room`);
   roomIn.addEventListener('change',()=>{ roomIn.dataset.manual = roomIn.value ? '1' : ''; });
   /* 83.625 -> 83 5/8 (nearest 1/8); ranges like "58.5–62" pass through */
@@ -1952,7 +1962,7 @@ function v4Render(){
   const note = V4.step==='item' && n>1 && !sku ? `<div class="v4-note">Another piece from the same collection starts with the same fabric, pillows and upgrades — change anything on the next steps.</div>` : '';
   document.getElementById('v4bar').innerHTML = `<div class="v4-ctx">${ctx}</div><div class="v4-title">${title}</div>` + note;
   /* one wide button: Next until the last choice, then Add to Order */
-  const last = steps[i+1]==='review';
+  const last = steps[i+1]==='review' && !!brand;
   const back = review ? `<button type="button" class="back" data-v4go="item">‹ Back to item ${n}</button>` : (i>0 ? `<button type="button" class="back" data-v4go="${steps[i-1]}">‹ Back</button>` : '');
   const nav = review
     ? `<button type="button" data-v4add="1">+ Add another item</button><button type="button" class="primary" onclick="tryPrint()">Print</button>${back}`
@@ -2043,6 +2053,10 @@ document.addEventListener('input', e=>{ if (/-style$/.test(e.target.id||'')){ co
 function v4Go(step){ V4.step = step; v4Render(); window.scrollTo({top: document.getElementById('v4bar').getBoundingClientRect().top + scrollY - 70, behavior:'smooth'}); }
 document.addEventListener('click', e=>{
   const t = e.target.closest && e.target.closest('[data-v4go],[data-v4edit],[data-v4add]'); if (!t) return;
+  if (t.dataset.v4go==='review' && !document.getElementById(`${V4.cur}-brand`).value){
+    const n = document.getElementById(`${V4.cur}-style`); n.classList.add('missing'); const f = n.closest('.f'); if (f) f.classList.add('err');
+    n.focus(); return;
+  }
   if (t.dataset.v4go) v4Go(t.dataset.v4go);
   else if (t.dataset.v4edit){ V4.cur = t.dataset.v4edit; v4Go('item'); }
   else addItem();
