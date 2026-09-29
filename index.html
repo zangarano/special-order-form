@@ -229,9 +229,9 @@ const BRANDS = {
       options:['BF807 WALNUT','BF008 CLOUD','BF103 ASH','BF106 SLATE','BF808 BRINDLE','BF903 Onyx','N/A']},
   ],
   'England': [
-    {id:'body', label:'Body fabric', span:6, placeholder:'Pattern & color / ACRO'},
-    {id:'pp1', label:'Toss pillow 1 fabric', span:3},
-    {id:'pp2', label:'Toss pillow 2 fabric', span:3},
+    {id:'body', label:'Body fabric', span:6, placeholder:'Pattern & color / ACRO', auto:'england'},
+    {id:'pp1', label:'Toss pillow 1 fabric', span:3, placeholder:'ACRO or pattern…', auto:'engpil'},
+    {id:'pp2', label:'Toss pillow 2 fabric', span:3, placeholder:'ACRO or pattern…', auto:'engpil'},
     {id:'ck', label:'Coil cushions (CK)', type:'select', span:2, options:YESNO},
     {id:'fk', label:'Frame coil (FK)', type:'select', span:2, options:YESNO},
     {id:'other', label:'Other upgrade', span:2},
@@ -357,7 +357,10 @@ function field(def, uid){
       if (!v) { input.classList.remove('bad'); return; }
       const U = v.toUpperCase();
       const snap = all.has(v) ? v : [...all].find(c=>c.toUpperCase()===U) || [...all].find(c=>c.split(' ')[0].toUpperCase()===U);
-      if (snap){ input.value = snap; input.classList.remove('bad'); autoCover(def.auto, snap, uid); return; }
+      if (snap){ input.value = snap; input.classList.remove('bad'); autoCover(def.auto, snap, uid);
+        /* England has no pattern/grade fields in this fallback layout, so the name and grade show under the pick */
+        if (/^eng/.test(def.auto)){ const h = wrap.querySelector('.hint') || wrap.appendChild(el('div',{class:'hint'})); h.textContent = coverLabel(snap); }
+        return; }
       input.value=''; input.classList.add('bad');
       const h = wrap.querySelector('.hint') || wrap.appendChild(el('div',{class:'hint'}));
       h.textContent = `⚠ ${v} isn't a real cover — cleared`;
@@ -372,7 +375,8 @@ if (typeof COVER_NAMES!=='undefined') for (const k in COVER_NAMES) NAME_BY_BARE[
 function coverName(c){ return (typeof COVER_NAMES!=='undefined' && COVER_NAMES[c]) || ''; }
 function coverLabel(c){ const g = COVER_GRADES[c] ? gradeText(COVER_GRADES[c]) : (/^[A-Z]\d/.test(c) ? `Grade ${c[0]}` : ''); return [coverName(c), g].filter(Boolean).join(' · '); }
 function brandCovers(kind){
-  const out = new Set(); const brand = kind==='lzb' ? 'La-Z-Boy' : 'Bassett';
+  if (kind==='engpil') return new Set(COVER_SETS[ENG_PILLOW_SET]);
+  const out = new Set(); const brand = kind==='lzb' ? 'La-Z-Boy' : kind==='england' ? 'England' : 'Bassett';
   const ids = new Set(Object.values(SKUS).filter(e=>e.b===brand && e.c!==undefined).map(e=>e.c));
   ids.forEach(i=>COVER_SETS[i].forEach(c=>out.add(c)));
   return out;
