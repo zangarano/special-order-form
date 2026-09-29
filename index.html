@@ -1998,7 +1998,7 @@ function v4Describe(uid){
     /* beds read as plain speech: "Flat Panel headboard and footboard, 3-drawer and 6-drawer pedestals, standard rails, wood knobs" */
     const B = {};
     bf.querySelectorAll('.bed-lines .k').forEach(k=>{ const v = k.nextSibling && k.nextSibling.textContent.trim(); if (v) B[k.textContent] = v; });
-    if (B.Finish) l2.push(`in ${B.Finish} finish`);
+    if (B.Finish) l2.push(`${B.Finish} finish`);
     if (B['Headboard fabric']) l2.push(`${B['Headboard fabric']} headboard fabric`);
     const style = (v, w) => (v||'').replace(new RegExp(`\\s*${w}$`, 'i'), '').trim();
     const hb = style(B.Headboard, 'Headboard'), fb = style(B.Footboard, 'Footboard');
@@ -2020,13 +2020,15 @@ function v4Describe(uid){
   const typeF = byLab(/^cover type$/i)[0]; const type = typeF ? get(typeF) : '';
   const coverF = byLab(/^(cover # \+ color|fabric #|leather #|fabric \/ leather #|body fabric)$/i)[0];
   [typeF].concat(byLab(/^(pattern name|pattern · color|grade)$/i)).forEach(f=>f && used.add(f));
-  if (coverF){ used.add(coverF); const v = get(coverF); if (v) l2.push(`in ${v4Fabric(v, brand)} ${(type || 'fabric').toLowerCase()}`); }
-  byLab(/^(finish|finish \/ stain)$/i).forEach(f=>{ used.add(f); const v = get(f); if (v) l2.push(`in ${v4NoCode(v)} finish`); });
+  /* with toss pillows on the piece, the cover is the body fabric */
+  const hasPillows = byLab(/pillow/i).length > 0;
+  if (coverF){ used.add(coverF); const v = get(coverF); if (v) l2.push(`${v4Fabric(v, brand)} ${hasPillows ? 'body ' : ''}${(type || 'fabric').toLowerCase()}`); }
+  byLab(/^(finish|finish \/ stain)$/i).forEach(f=>{ used.add(f); const v = get(f); if (v) l2.push(`${v4NoCode(v)} finish`); });
   byLab(/^headboard fabric$/i).forEach(f=>{ used.add(f); const v = get(f); if (v) l2.push(`${v4NoCode(v)} headboard fabric`); });
   const pv = byLab(/pillow/i).map(f=>{ used.add(f); return get(f); });
   if (pv.filter(Boolean).length){
     if (pv.every(v=>v===pv[0])) l2.push(`${v4Fabric(pv[0], brand)} pillows`);
-    else pv.forEach((v,j)=>{ if (v) l2.push(`pillow ${j+1} in ${v4Fabric(v, brand)}`); });
+    else pv.forEach((v,j)=>{ if (v) l2.push(`${v4Fabric(v, brand)} pillow pattern ${j+1}`); });
   }
   fs.filter(f=>!used.has(f)).forEach(f=>{
     const L = v4Label(f); if (/^(collection|bed size|build as)$/i.test(L)) return;
