@@ -150,6 +150,26 @@
     .ack{margin-top:14px;padding:6px 10px}
     .sigs{margin-top:48px;gap:22px 24px}
   }
+  /* ---------- V2 layout (added 2026-09-29): line-item table, options underneath ---------- */
+  button.v2-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:700;box-shadow:inset 0 0 0 1px var(--accent)}
+  #v2lines{display:none;margin-top:14px}
+  body.v2 #v2lines{display:block}
+  .v2-cap{font-size:11px;color:var(--muted);margin:0 0 6px}
+  .v2-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+  .v2-table th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:2px solid var(--ink);padding:4px 6px}
+  .v2-table td{padding:6px 6px 2px;vertical-align:top;font-weight:600;overflow-wrap:anywhere}
+  .v2-table .c-qty{width:48px;text-align:center}
+  .v2-table .c-brand{width:15%}.v2-table .c-coll{width:18%}.v2-table .c-model{width:15%}
+  .v2-table tr.v2-opts td{font-weight:400;font-size:12px;color:var(--ink);padding:0 6px 7px 18px;border-bottom:1px solid var(--line)}
+  .v2-table tr.v2-opts .k{color:var(--muted)}
+  .v2-empty{color:var(--muted);font-size:13px;padding:8px 6px;border-bottom:1px solid var(--line)}
+  @media print{
+    body.v2 #items{display:none!important}
+    .v2-cap{display:none}
+    .v2-table{font-size:11.5px}
+    .v2-table tr{break-inside:avoid;page-break-inside:avoid}
+    .v2-table tr.v2-opts td{font-size:10.5px}
+  }
 </style>
 </head>
 <body>
@@ -158,6 +178,7 @@
   <button class="primary" onclick="tryPrint()">Print</button>
   <button onclick="addItem()">+ Add item</button>
   <button onclick="clearForm()">Clear form</button>
+  <button class="v2-btn" id="v2btn" type="button" aria-pressed="false" onclick="toggleV2()" title="Print the items as a table: Brand, Collection, Model, Piece, Qty">V2</button>
 </div>
 
 <div id="print-msg" class="print-msg no-print" role="alert" hidden></div>
@@ -185,6 +206,7 @@
   <h2>Items</h2>
   <div id="items"></div>
   <div class="no-print"><button onclick="addItem()">+ Add item</button></div>
+  <div id="v2lines"></div>
 
   <div class="signoff">
   <p class="ack">I have reviewed the information above and fully understand what is on this form. I understand that this order is considered a Special Order, and therefore cannot be cancelled, altered, or returned at any time for any reason. I have considered and confirmed all dimensions, including relevant delivery requirements. I agree that if something was measured incorrectly that the responsibility is mine, and Markson&#39;s Furniture will complete the delivery to the nearest open space available. The items are not returnable for any reason. All financial agreements are final, without any possibility of alterations or refunds.</p>
@@ -1831,6 +1853,7 @@ function tryPrint(){
     return;
   }
   msg.hidden = true;
+  if (document.body.classList.contains('v2')) renderV2();
   window.print();
 }
 /* clear a field's red as soon as it's filled; Ctrl/Cmd+P goes through the same check */
@@ -1859,6 +1882,54 @@ function setToday(){
 
 setToday();
 addItem();
+
+/* ---------- V2 layout (Zach 9/29): same entry form, prints items as a table ----------
+   Brand | Collection | Model | Piece | Qty, with each item's special-order options on a line underneath.
+   The original layout is untouched; the V2 button just switches which one prints. */
+const ARCH_COLLECTIONS = ['Alder 2 West','Alder Shaker','2 West','Chest Bed','Emmerson','Heritage','Pine','Portland','Shaker'];
+const MULTI_COLLECTIONS = ['Seneca Falls','EZ Motion'];
+function splitDesc(brand, desc, uid){
+  desc = String(desc||'').trim(); if (!desc) return ['', ''];
+  let list = brand==='Archbold' ? ARCH_COLLECTIONS : MULTI_COLLECTIONS;
+  if (brand==='Archbold'){
+    const cs = document.getElementById(`${uid}-collection`);
+    if (cs && cs.value) list = [cs.value].concat(list);
+  }
+  const hit = list.find(c=>desc.toLowerCase().startsWith(c.toLowerCase()+' '));
+  if (hit) return [hit, desc.slice(hit.length).trim()];
+  if (brand==='Archbold') return ['', desc];
+  const i = desc.indexOf(' ');
+  return i<0 ? ['', desc] : [desc.slice(0,i), desc.slice(i+1).trim()];
+}
+function renderV2(){
+  const host = document.getElementById('v2lines'); if (!host) return;
+  const rows = [...itemsEl.querySelectorAll('.item')].map(it=>{
+    const x = itemSnapshot(it); if (!x) return '';
+    const [coll, piece] = splitDesc(x.brand, x.desc, x.uid);
+    const model = x.key || document.getElementById(`${x.uid}-style`).value.trim();
+    const opts = x.opts.map(o=>{ const i=o.indexOf(': '); return i<0 ? esc(o) : `<span class="k">${esc(o.slice(0,i))}:</span> ${esc(o.slice(i+2))}`; });
+    if (x.dims) opts.push(`<span class="k">Dimensions:</span> ${esc(x.dims)}`);
+    return `<tr><td>${esc(x.brand)}</td><td>${esc(coll)}</td><td class="mono">${esc(model)}</td><td>${esc(piece)}</td><td class="c-qty">${esc(x.qty)}</td></tr>`+
+      `<tr class="v2-opts"><td colspan="5">${opts.length ? opts.join(' &nbsp;·&nbsp; ') : '<span class="k">No special-order options</span>'}</td></tr>`;
+  }).join('');
+  host.innerHTML = `<p class="v2-cap">V2 print layout — this table is what prints. Fill items in above.</p>`+
+    `<table class="v2-table"><thead><tr><th class="c-brand">Brand</th><th class="c-coll">Collection</th><th class="c-model">Model</th><th>Piece</th><th class="c-qty">Qty</th></tr></thead>`+
+    `<tbody>${rows || '<tr><td colspan="5" class="v2-empty">No items yet.</td></tr>'}</tbody></table>`;
+}
+function setV2(on){
+  document.body.classList.toggle('v2', on);
+  document.getElementById('v2btn').setAttribute('aria-pressed', String(on));
+  try { localStorage.setItem('soV2', on ? '1' : ''); } catch(e){}
+  if (on) renderV2();
+}
+function toggleV2(){ setV2(!document.body.classList.contains('v2')); }
+let v2t; ['input','change'].forEach(ev=>document.addEventListener(ev, ()=>{
+  if (!document.body.classList.contains('v2')) return; clearTimeout(v2t); v2t = setTimeout(renderV2, 150); }));
+itemsEl.addEventListener('click', ()=>{ if (document.body.classList.contains('v2')) setTimeout(renderV2, 0); });
+window.addEventListener('beforeprint', ()=>{ if (document.body.classList.contains('v2')) renderV2(); });
+(function(){ let on = /[?&]v=?2\b/.test(location.search);
+  try { if (localStorage.getItem('soV2')==='1') on = true; } catch(e){}
+  if (on) setV2(true); })();
 
 /* ---------- Two copies per print (Zach 9/25) ----------
    A page can't set the print dialog's copy count, so the whole order (page 1 + the drawings page) is
