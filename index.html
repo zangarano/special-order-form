@@ -849,6 +849,9 @@ function addItem(){
     field({id:'desc',label:'Piece',span:3,placeholder:'e.g. Sofa'},uid),
     field({id:'qty',label:'Qty',span:1},uid),
   ]);
+  /* Piece comes from the SKU (or the bed builder) — not typed */
+  const descIn = base.querySelector(`#${uid}-desc`);
+  descIn.readOnly = true; descIn.tabIndex = -1; descIn.classList.add('auto'); descIn.placeholder = 'Auto from SKU';
   base.querySelector(`#${uid}-qty`).value = '1';
   base.querySelector(`#${uid}-qty`).inputMode = 'numeric';
 
