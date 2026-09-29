@@ -2130,7 +2130,7 @@ window.addEventListener('afterprint', ()=>{ document.body.classList.remove('v4-c
    Each form gets an order number when it opens (and again on Clear form), printed on both pages. It comes
    with a random edit token, so a reprint updates that same order in SIMON and nobody else can overwrite it. */
 const SIMON_SAVE_URL = 'https://projectsimon.app/api/so/submit';
-const TURNSTILE_SITEKEY = '';   // Cloudflare Turnstile site key — paste it here once the widget exists (see setup notes)
+const TURNSTILE_SITEKEY = '0x4AAAAAAFJfgPaN8S-6IJY4';   // Cloudflare Turnstile site key — paste it here once the widget exists (see setup notes)
 const REPS = ['Angel','Barbara','Brandon','Charles','Chris','Dave','Marie','Nicole','Zach'];
 const repSel = document.getElementById('rep');
 REPS.forEach(r=>repSel.appendChild(el('option',{value:r,text:r})));
