@@ -2152,7 +2152,7 @@ function orderPayload(){
       const x = itemSnapshot(it); if (!x) return null;
       const [l2, l3] = v4Describe(x.uid);
       return {brand:x.brand, sku:x.key || document.getElementById(`${x.uid}-style`).value.trim(), desc:x.desc, qty:x.qty,
-        room:x.room || '', dims:x.dims || '', line2:l2, line3:l3, opts:x.opts};
+        room:x.room || '', dims:x.dims || '', line2:l2, line3:l3, opts:x.opts, state:itemState(x.uid)};
     }).filter(Boolean);
     const v = id=>document.getElementById(id).value;
     return {id:ORDER.id, token:ORDER.token, rep:v('rep'), store:v('store'), date:v('date'), lead:v('lead'),
@@ -2203,12 +2203,77 @@ window.print = function(){
   saving = true; saveMsg('wait', `Saving ${ORDER.id} to SIMON…`);
   saveOrder(false)
     .then(()=>saveMsg('ok', `Saved to SIMON · ${ORDER.id}`))
-    .catch(e=>saveMsg('bad', `Couldn't save to SIMON (${e.name==='AbortError' ? 'no response' : e.message}) — printed anyway. Printing again will retry.`))
+    .catch(e=>saveMsg('bad', e.message==='id in use' ? `Not saved: ${ORDER.id} was reopened from SIMON in another tab — print from that tab. (Printed anyway.)`
+      : e.message==='order was deleted' ? `Not saved: ${ORDER.id} was deleted in SIMON. Clear the form to start a new order. (Printed anyway.)`
+      : `Couldn't save to SIMON (${e.name==='AbortError' ? 'no response' : e.message}) — printed anyway. Printing again will retry.`))
     .finally(()=>{ saving = false; ORDER.printing = true; realPrint(); });
 };
 /* printing from the browser menu skips the button — still send it */
 window.addEventListener('beforeprint', ()=>{ if (!ORDER.printing && !saving) saveOrder(true).catch(()=>{}); });
 window.addEventListener('afterprint', ()=>{ ORDER.printing = false; });
+
+/* ---------- Reopen from SIMON (Zach 9/29) ----------
+   Each saved item carries its raw field values (itemState) so SIMON's "Reopen in form" can rebuild it
+   exactly — options, beds, drawings — under the SAME order number. SIMON opens this page at #reopen and hands
+   the order over by postMessage; it is accepted only from projectsimon.app, and nothing lands in the address
+   bar. SIMON issues a fresh edit key, so printing again updates that same saved order. */
+const SIMON_ORIGIN = 'https://projectsimon.app';
+function itemState(uid){
+  const f = {};
+  const it = v4Item(uid);
+  it.querySelectorAll('.brand-fields input[id], .brand-fields select[id]').forEach(n=>{
+    if (!n.id.startsWith(uid+'-')) return;
+    const v = n.value; if (v!=='' && v!=null) f[n.id.slice(uid.length+1)] = v;
+  });
+  const room = document.getElementById(`${uid}-room`);
+  return {style:document.getElementById(`${uid}-style`).value.trim(), qty:document.getElementById(`${uid}-qty`).value,
+    room:room.value, roomManual:!!room.dataset.manual, f};
+}
+const soTick = ms=>new Promise(r=>setTimeout(r, ms||0));
+async function soSet(n, v){
+  if (!n || v==null) return;
+  if (n.tagName==='SELECT' && ![...n.options].some(o=>o.value===v)) return;
+  n.value = v;
+  n.dispatchEvent(new Event('input', {bubbles:true})); n.dispatchEvent(new Event('change', {bubbles:true}));
+  await soTick(15);
+}
+const BED_ORDER = ['bed-type','bed-style','bed-size','bed-rails','bed-height','bed-hb','bed-p1','bed-fb','bed-p2','bed-finish','bed-hw','bed-fab'];
+async function restoreOrder(o, key){
+  const msg = document.getElementById('save-msg');
+  saveMsg('wait', `Reopening ${o.id}…`);
+  const byId = id=>document.getElementById(id);
+  itemsEl.innerHTML=''; seq=0; leadAuto=true;
+  byId('store').value = o.store || ''; byId('date').value = o.date || byId('date').value;
+  if (o.rep){ if (![...repSel.options].some(x=>x.value===o.rep)) repSel.appendChild(el('option',{value:o.rep,text:o.rep})); repSel.value = o.rep; }
+  const c = o.customer || {};
+  byId('cname').value = c.name || ''; byId('cphone').value = c.phone || ''; byId('cemail').value = c.email || '';
+  let missing = 0;
+  for (const x of (o.items || [])){
+    addItem(); const uid = `i${seq}`;
+    const st = x.state || {style:x.sku, qty:x.qty, room:x.room, f:{}};
+    if (!x.state) missing++;
+    await soSet(byId(`${uid}-style`), st.style || x.sku); await soTick(60);   // builds the option boxes (and runs the set fill)
+    const f = st.f || {};
+    for (const k of BED_ORDER) if (k in f) await soSet(byId(`${uid}-${k}`), f[k]);
+    for (const [k, v] of Object.entries(f)) if (!BED_ORDER.includes(k)) await soSet(byId(`${uid}-${k}`), v);
+    byId(`${uid}-qty`).value = st.qty || x.qty || '1';
+    if (st.room){ const r = byId(`${uid}-room`); r.value = st.room; if (st.roomManual) r.dataset.manual = '1'; }
+  }
+  updateLead();
+  ORDER.id = o.id; ORDER.token = key; byId('order-no').textContent = `No. ${o.id}`;
+  V4.cur = ''; V4.step = 'review'; v4Render(); queuePage2();
+  saveMsg(missing ? 'bad' : 'ok', missing
+    ? `Reopened ${o.id}. This order was saved before options were stored — re-pick the options on ${missing} piece${missing>1?'s':''} before printing.`
+    : `Reopened ${o.id} from SIMON. Printing again updates this same order.`);
+}
+if (location.hash === '#reopen' && window.opener){
+  window.addEventListener('message', ev=>{
+    if (ev.origin !== SIMON_ORIGIN || ev.source !== window.opener || !ev.data || ev.data.type !== 'so-load') return;
+    history.replaceState(null, '', location.pathname);
+    restoreOrder(ev.data.order, ev.data.key);
+  });
+  window.opener.postMessage({type:'so-ready'}, SIMON_ORIGIN);
+}
 v4Render();
 
 /* ---------- Two copies per print (Zach 9/25) ----------
