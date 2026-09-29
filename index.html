@@ -170,6 +170,57 @@
     .v2-table tr{break-inside:avoid;page-break-inside:avoid}
     .v2-table tr.v2-opts td{font-size:10.5px}
   }
+  /* ---------- V3 layout (added 2026-09-29): spreadsheet entry AND spreadsheet print ----------
+     One row per item — Brand | Collection | Model | Piece | Qty — options in a shaded row of cells underneath. */
+  button.v3-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:700;box-shadow:inset 0 0 0 1px var(--accent)}
+  .v3only,.v3-head{display:none}
+  body.v3 .v3only{display:flex}
+  body.v3 .v3-head{display:grid}
+  body.v3 .v1only{display:none!important}
+  .v3-head,body.v3 .base-row{grid-template-columns:15% 17% 14% minmax(0,1fr) 56px;gap:0}
+  .v3-head{margin-right:0;border:1px solid var(--ink);background:var(--alt);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink);
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .v3-head span{padding:6px 8px;border-right:1px solid var(--line)}
+  .v3-head span:last-child{border-right:none;text-align:center}
+  body.v3 #items{border-left:1px solid var(--ink);border-right:1px solid var(--ink)}
+  body.v3 .item{position:relative;border:none;border-bottom:1px solid var(--ink);border-radius:0;padding:0;margin:0;background:var(--paper)!important}
+  body.v3 .item-head{position:absolute;right:-34px;top:4px;margin:0}
+  body.v3 .item-num{display:none}
+  body.v3 .item-head .link{font-size:0;padding:6px 8px}
+  body.v3 .item-head .link::after{content:"✕";font-size:14px}
+  body.v3 .base-row > .f > label{display:none}
+  body.v3 .base-row .f-brand{order:1}body.v3 .base-row .f-coll{order:2}body.v3 .base-row .f-style{order:3}
+  body.v3 .base-row .f-piece{order:4}body.v3 .base-row .f-qty{order:5}
+  body.v3 .base-row .f{grid-column:auto;border-right:1px solid var(--line)}
+  body.v3 .base-row .f-qty{border-right:none}
+  body.v3 .base-row .f-qty input{text-align:center}
+  body.v3 .base-row input,body.v3 .base-row select{border:none;border-radius:0;background:transparent;padding:8px;font-weight:600;min-height:36px}
+  body.v3 .base-row input:focus,body.v3 .base-row select:focus,
+  body.v3 .brand-fields input:focus,body.v3 .brand-fields select:focus,body.v3 .item-notes input:focus,body.v3 .item-notes select:focus{outline:2px solid var(--accent);outline-offset:-2px}
+  body.v3 .base-row .hint{padding:0 8px 4px;min-height:0}
+  body.v3 .brand-fields,body.v3 .item-notes{margin:0!important;background:var(--alt);border-top:1px solid var(--line);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.v3 .brand-fields .grid,body.v3 .item-notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0}
+  body.v3 .brand-fields .f,body.v3 .item-notes .f{grid-column:auto;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:-1px}
+  body.v3 .brand-fields label,body.v3 .item-notes label{font-size:9.5px;padding:3px 8px 0;margin:0;text-transform:uppercase;letter-spacing:.5px}
+  body.v3 .brand-fields input,body.v3 .brand-fields select,body.v3 .item-notes input,body.v3 .item-notes select{border:none;border-radius:0;background:transparent;padding:2px 8px 5px;font-size:13px}
+  body.v3 .brand-fields .hint{padding:0 8px 3px;min-height:0}
+  body.v3 .brand-fields .bed-block{margin:6px 8px}
+  body.v3 .missing{outline-offset:-2px}
+  @media (max-width:640px){
+    .v3-head,body.v3 .base-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .v3-head{display:none!important}
+    body.v3 .base-row > .f > label{display:block;padding:4px 8px 0}
+    body.v3 .item-head{right:4px}
+    body.v3 #items{border-top:1px solid var(--ink)}
+  }
+  @media print{
+    body.v3 .base-row input,body.v3 .base-row select{min-height:0;padding:4px 6px;font-size:11.5px;border:none}
+    body.v3 .brand-fields input,body.v3 .brand-fields select,body.v3 .item-notes input,body.v3 .item-notes select{padding:0 6px 3px;font-size:10.5px;border:none;font-weight:600}
+    body.v3 .brand-fields label,body.v3 .item-notes label{font-size:8.5px;padding:2px 6px 0}
+    body.v3 .brand-fields .grid,body.v3 .item-notes{grid-template-columns:repeat(4,minmax(0,1fr))}
+    body.v3 .item{break-inside:avoid;page-break-inside:avoid}
+    body.v3 .v3-head span{padding:4px 6px}
+  }
 </style>
 </head>
 <body>
@@ -179,6 +230,7 @@
   <button onclick="addItem()">+ Add item</button>
   <button onclick="clearForm()">Clear form</button>
   <button class="v2-btn" id="v2btn" type="button" aria-pressed="false" onclick="toggleV2()" title="Print the items as a table: Brand, Collection, Model, Piece, Qty">V2</button>
+  <button class="v3-btn" id="v3btn" type="button" aria-pressed="false" onclick="toggleV3()" title="Spreadsheet entry and print: Brand, Collection, Model, Piece, Qty">V3</button>
 </div>
 
 <div id="print-msg" class="print-msg no-print" role="alert" hidden></div>
@@ -204,6 +256,7 @@
   </div>
 
   <h2>Items</h2>
+  <div class="v3-head" aria-hidden="true"><span>Brand</span><span>Collection</span><span>Model</span><span>Piece</span><span>Qty</span></div>
   <div id="items"></div>
   <div class="no-print"><button onclick="addItem()">+ Add item</button></div>
   <div id="v2lines"></div>
@@ -826,17 +879,27 @@ function addItem(){
   const styleWrap = field({id:'style',label:'Style / SKU',span:1,placeholder:HAS_SKUS?'Type SKU or name':''},uid);
   const styleIn = styleWrap.querySelector('input');
   if (HAS_SKUS) styleIn.setAttribute('list', skuList());
-  const base = el('div',{class:'grid'},[
-    el('div',{class:'f s1'},[el('label',{for:brandSel.id,text:'Brand'}),brandSel]),
-    styleWrap,
-    field({id:'desc',label:'Piece',span:3,placeholder:'e.g. Sofa'},uid),
-    field({id:'qty',label:'Qty',span:1},uid),
+  const descWrap = field({id:'desc',label:'Piece',span:3,placeholder:'e.g. Sofa'},uid);
+  const qtyWrap = field({id:'qty',label:'Qty',span:1},uid);
+  /* V3 cells: Collection + Piece split out of the Piece description, and written back into it */
+  const collWrap = field({id:'v3coll',label:'Collection',span:1},uid);
+  const pieceWrap = field({id:'v3piece',label:'Piece',span:1,placeholder:'e.g. Sofa'},uid);
+  styleWrap.classList.add('f-style'); descWrap.classList.add('v1only'); qtyWrap.classList.add('f-qty');
+  collWrap.classList.add('v3only','f-coll'); pieceWrap.classList.add('v3only','f-piece');
+  const base = el('div',{class:'grid base-row'},[
+    el('div',{class:'f s1 f-brand'},[el('label',{for:brandSel.id,text:'Brand'}),brandSel]),
+    styleWrap, descWrap, qtyWrap, collWrap, pieceWrap,
   ]);
+  [collWrap, pieceWrap].forEach(w=>w.querySelector('input').addEventListener('input',()=>{
+    const d = base.querySelector(`#${uid}-desc`);
+    d.value = [collWrap.querySelector('input').value.trim(), pieceWrap.querySelector('input').value.trim()].filter(Boolean).join(' ');
+    d.dataset.v3 = d.value;
+  }));
   base.querySelector(`#${uid}-qty`).value = '1';
   base.querySelector(`#${uid}-qty`).inputMode = 'numeric';
 
   const brandFields = el('div',{class:'brand-fields'});
-  const itemNotes = el('div',{class:'grid',style:'margin-top:10px'},[
+  const itemNotes = el('div',{class:'grid item-notes',style:'margin-top:10px'},[
     field({id:'dims',label:'Dimensions (W × D × H)',span:3,placeholder:'Auto from SKU'},uid),
     field({id:'room',label:'Room',type:'select',span:3,options:[''].concat(ROOMS)},uid)
   ]);
@@ -1774,7 +1837,7 @@ function autoRoom(uid, brand, key){
    Skipped: item notes, dimensions and the auto-filled grade / pattern boxes, disabled or hidden
    fields, and blank extra items (no brand, nothing typed). Anything missing turns red and the
    page jumps to the first one. */
-const OPTIONAL = /-(notes|dims|grade|pattern)$/;
+const OPTIONAL = /-(notes|dims|grade|pattern|v3coll)$/;
 function requiredFields(){
   const out = ['store','date','lead','cname','cphone','cemail'].map(id=>document.getElementById(id));
   const items = [...itemsEl.querySelectorAll('.item')];
@@ -1917,6 +1980,7 @@ function renderV2(){
     `<tbody>${rows || '<tr><td colspan="5" class="v2-empty">No items yet.</td></tr>'}</tbody></table>`;
 }
 function setV2(on){
+  if (on && document.body.classList.contains('v3')) setV3(false);
   document.body.classList.toggle('v2', on);
   document.getElementById('v2btn').setAttribute('aria-pressed', String(on));
   try { localStorage.setItem('soV2', on ? '1' : ''); } catch(e){}
@@ -1930,6 +1994,32 @@ window.addEventListener('beforeprint', ()=>{ if (document.body.classList.contain
 (function(){ let on = /[?&]v=?2\b/.test(location.search);
   try { if (localStorage.getItem('soV2')==='1') on = true; } catch(e){}
   if (on) setV2(true); })();
+
+/* ---------- V3 layout (Zach 9/29): spreadsheet entry + spreadsheet print ----------
+   Each item is one row — Brand | Collection | Model | Piece | Qty — with its special-order options as a shaded
+   row of cells underneath. Same fields and logic as the original layout (untouched); page 2 drawings print as before. */
+function v3Sync(){
+  itemsEl.querySelectorAll('.item').forEach(it=>{
+    const uid = it.querySelector('select[id$="-brand"]').id.replace(/-brand$/,'');
+    const d = document.getElementById(`${uid}-desc`), c = document.getElementById(`${uid}-v3coll`), p = document.getElementById(`${uid}-v3piece`);
+    if (!d || !c || !p || d.dataset.v3 === d.value) return;
+    const [coll, piece] = splitDesc(document.getElementById(`${uid}-brand`).value, d.value, uid);
+    c.value = coll; p.value = piece; d.dataset.v3 = d.value;
+  });
+}
+function setV3(on){
+  if (on && document.body.classList.contains('v2')) setV2(false);
+  document.body.classList.toggle('v3', on);
+  document.getElementById('v3btn').setAttribute('aria-pressed', String(on));
+  try { localStorage.setItem('soV3', on ? '1' : ''); } catch(e){}
+  v3Sync();
+}
+function toggleV3(){ setV3(!document.body.classList.contains('v3')); }
+['input','change','click'].forEach(ev=>document.addEventListener(ev, ()=>setTimeout(v3Sync, 0)));
+window.addEventListener('beforeprint', v3Sync);
+(function(){ let on = /[?&]v=?3\b/.test(location.search);
+  try { if (localStorage.getItem('soV3')==='1') on = true; } catch(e){}
+  if (on) setV3(true); })();
 
 /* ---------- Two copies per print (Zach 9/25) ----------
    A page can't set the print dialog's copy count, so the whole order (page 1 + the drawings page) is
