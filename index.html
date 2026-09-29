@@ -150,124 +150,40 @@
     .ack{margin-top:14px;padding:6px 10px}
     .sigs{margin-top:48px;gap:22px 24px}
   }
-  /* ---------- V2 layout (added 2026-09-29): line-item table, options underneath ---------- */
-  button.v2-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:700;box-shadow:inset 0 0 0 1px var(--accent)}
-  #v2lines{display:none;margin-top:14px}
-  body.v2 #v2lines{display:block}
-  .v2-cap{font-size:11px;color:var(--muted);margin:0 0 6px}
-  .v2-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
-  .v2-table th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:2px solid var(--ink);padding:4px 6px}
-  .v2-table td{padding:6px 6px 2px;vertical-align:top;font-weight:600;overflow-wrap:anywhere}
-  .v2-table .c-qty{width:48px;text-align:center}
-  .v2-table .c-brand{width:15%}.v2-table .c-coll{width:18%}.v2-table .c-model{width:15%}
-  .v2-table tr.v2-opts td{font-weight:400;font-size:12px;color:var(--ink);padding:0 6px 7px 18px;border-bottom:1px solid var(--line)}
-  .v2-table tr.v2-opts .k{color:var(--muted)}
-  .v2-empty{color:var(--muted);font-size:13px;padding:8px 6px;border-bottom:1px solid var(--line)}
-  @media print{
-    body.v2 #items{display:none!important}
-    .v2-cap{display:none}
-    .v2-table{font-size:11.5px}
-    .v2-table tr{break-inside:avoid;page-break-inside:avoid}
-    .v2-table tr.v2-opts td{font-size:10.5px}
-  }
-  /* ---------- V3 layout (added 2026-09-29): spreadsheet entry AND spreadsheet print ----------
-     One row per item — Brand | Collection | Model | Piece | Qty — options in a shaded row of cells underneath. */
-  button.v3-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:700;box-shadow:inset 0 0 0 1px var(--accent)}
-  .v3only,.v3-head{display:none}
-  body.v3 .v3only{display:flex}
-  body.v3 .v3-head{display:grid}
-  body.v3 .v1only{display:none!important}
-  .v3-head,body.v3 .base-row{grid-template-columns:15% 17% 14% minmax(0,1fr) 56px;gap:0}
-  .v3-head{margin-right:0;border:1px solid var(--ink);background:var(--alt);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink);
-    -webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .v3-head span{padding:6px 8px;border-right:1px solid var(--line)}
-  .v3-head span:last-child{border-right:none;text-align:center}
-  body.v3 #items{border-left:1px solid var(--ink);border-right:1px solid var(--ink)}
-  body.v3 .item{position:relative;border:none;border-bottom:1px solid var(--ink);border-radius:0;padding:0;margin:0;background:var(--paper)!important}
-  body.v3 .item-head{position:absolute;right:-34px;top:4px;margin:0}
-  body.v3 .item-num{display:none}
-  body.v3 .item-head .link{font-size:0;padding:6px 8px}
-  body.v3 .item-head .link::after{content:"✕";font-size:14px}
-  body.v3 .base-row > .f > label{display:none}
-  body.v3 .base-row .f-brand{order:1}body.v3 .base-row .f-coll{order:2}body.v3 .base-row .f-style{order:3}
-  body.v3 .base-row .f-piece{order:4}body.v3 .base-row .f-qty{order:5}
-  body.v3 .base-row .f{grid-column:auto;border-right:1px solid var(--line)}
-  body.v3 .base-row .f-qty{border-right:none}
-  body.v3 .base-row .f-qty input{text-align:center}
-  body.v3 .base-row input,body.v3 .base-row select{border:none;border-radius:0;background:transparent;padding:8px;font-weight:600;min-height:36px}
-  body.v3 .base-row input:focus,body.v3 .base-row select:focus,
-  body.v3 .brand-fields input:focus,body.v3 .brand-fields select:focus,body.v3 .item-notes input:focus,body.v3 .item-notes select:focus{outline:2px solid var(--accent);outline-offset:-2px}
-  body.v3 .base-row .hint{padding:0 8px 4px;min-height:0}
-  body.v3 .brand-fields,body.v3 .item-notes{margin:0!important;background:var(--alt);border-top:1px solid var(--line);-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  body.v3 .brand-fields .grid,body.v3 .item-notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0}
-  body.v3 .brand-fields .f,body.v3 .item-notes .f{grid-column:auto;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:-1px}
-  body.v3 .brand-fields label,body.v3 .item-notes label{font-size:9.5px;padding:3px 8px 0;margin:0;text-transform:uppercase;letter-spacing:.5px}
-  body.v3 .brand-fields input,body.v3 .brand-fields select,body.v3 .item-notes input,body.v3 .item-notes select{border:none;border-radius:0;background:transparent;padding:2px 8px 5px;font-size:13px}
-  body.v3 .brand-fields .hint{padding:0 8px 3px;min-height:0}
-  body.v3 .brand-fields .bed-block{margin:6px 8px}
-  body.v3 .missing{outline-offset:-2px}
-  @media (max-width:640px){
-    .v3-head,body.v3 .base-row{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .v3-head{display:none!important}
-    body.v3 .base-row > .f > label{display:block;padding:4px 8px 0}
-    body.v3 .item-head{right:4px}
-    body.v3 #items{border-top:1px solid var(--ink)}
-  }
-  @media print{
-    body.v3 .base-row input,body.v3 .base-row select{min-height:0;padding:4px 6px;font-size:11.5px;border:none}
-    body.v3 .brand-fields input,body.v3 .brand-fields select,body.v3 .item-notes input,body.v3 .item-notes select{padding:0 6px 3px;font-size:10.5px;border:none;font-weight:600}
-    body.v3 .brand-fields label,body.v3 .item-notes label{font-size:8.5px;padding:2px 6px 0}
-    body.v3 .brand-fields .grid,body.v3 .item-notes{grid-template-columns:repeat(4,minmax(0,1fr))}
-    body.v3 .item{break-inside:avoid;page-break-inside:avoid}
-    body.v3 .v3-head span{padding:4px 6px}
-  }
-  /* ---------- V4 layout (added 2026-09-29): step-by-step entry, plain-English summary on the printout ---------- */
-  button.v4-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:700;box-shadow:inset 0 0 0 1px var(--accent)}
-  #v4bar,#v4sum{display:none}
-  body.v4 #v4bar{display:block}
-  body.v4.v4-review #v4sum{display:block}
+  /* ---------- Step-by-step entry (the V4 layout, main version since 2026-09-29) ----------
+     One item and one step at a time; the printout is a written summary, drawings on page 2. */
   body.v4:not(.v4-check) .v4-off{display:none!important}
-  body.v4 .item-head,body.v4 .items-wrap ~ .no-print,body.v4 .v3-head{display:none!important}
+  body.v4 .item-head,body.v4 .items-wrap ~ .no-print{display:none!important}
   body.v4 .item{border:none;padding:0;background:none!important;margin:0}
-  body.v4 .item-notes{margin-top:10px}
-  .v4-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
-  .v4-chip{font-size:12px;padding:4px 10px;border-radius:14px;border:1px solid var(--line);color:var(--muted);background:var(--paper)}
-  .v4-chip.done{color:var(--ink);border-color:var(--ink)}
-  .v4-chip.now{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+  #v4sum{display:none}
+  body.v4-review #v4sum{display:block}
   .v4-ctx{font-size:12px;color:var(--muted)}
   .v4-title{font-size:18px;font-weight:700;margin:2px 0 10px}
-  .v4-nav{display:flex;justify-content:space-between;gap:8px;margin:14px 0 4px}
-  .v4-nav .sp{flex:1}
-  .v4-order{font-size:12.5px;border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-bottom:12px;background:var(--field)}
-  .v4-order .row{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
-  .v4-order .cur{font-weight:700}
-  .v4-order button,.v4s-item button{padding:2px 8px;font-size:12px}
-  .v4-note{font-size:12px;color:var(--muted);margin-top:6px}
+  .v4-note{font-size:12px;color:var(--muted);margin:-4px 0 10px}
+  .v4-nav{display:flex;flex-direction:column;gap:8px;margin:16px 0 4px}
+  .v4-nav button{width:100%;padding:12px 14px;font-size:15px}
+  .v4-nav button.back{width:auto;align-self:flex-start;border:none;background:none;color:var(--muted);padding:4px 2px;font-size:13px}
   .v4sum h3{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin:14px 0 4px;border-bottom:1px solid var(--line);padding-bottom:3px}
   .v4s-item{padding:8px 0;border-bottom:1px solid var(--line);break-inside:avoid;page-break-inside:avoid}
-  .v4s-head{display:flex;justify-content:space-between;gap:8px}
+  .v4s-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
   .v4s-name{font-weight:700;font-size:14px}
-  .v4s-sku{color:var(--muted);font-weight:400;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
   .v4s-line{font-size:13.5px;margin-top:2px}
-  .v4s-dims{font-size:12px;color:var(--muted);margin-top:2px}
+  .v4s-head button{padding:2px 8px;font-size:12px}
   @media print{
     body.v4 .items-wrap{visibility:hidden!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;border:0!important}
-    body.v4 #v4bar{display:none!important}
-    body.v4 .v4sum{display:block!important}
+    body.v4 #v4bar,body.v4 #v4nav{display:none!important}
+    .v4sum{display:block!important}
     .v4s-item{padding:5px 0}
-    .v4s-name{font-size:12.5px}.v4s-line{font-size:12px}.v4s-dims{font-size:10.5px}
+    .v4s-name{font-size:12.5px}.v4s-line{font-size:12px}
   }
 </style>
 </head>
-<body>
+<body class="v4">
 
 <div class="toolbar">
   <button class="primary" onclick="tryPrint()">Print</button>
   <button onclick="addItem()">+ Add item</button>
   <button onclick="clearForm()">Clear form</button>
-  <button class="v2-btn" id="v2btn" type="button" aria-pressed="false" onclick="toggleV2()" title="Print the items as a table: Brand, Collection, Model, Piece, Qty">V2</button>
-  <button class="v3-btn" id="v3btn" type="button" aria-pressed="false" onclick="toggleV3()" title="Spreadsheet entry and print: Brand, Collection, Model, Piece, Qty">V3</button>
-  <button class="v4-btn" id="v4btn" type="button" aria-pressed="false" onclick="toggleV4()" title="Step by step: item, fabric, pillows, upgrades — prints as a written summary">V4</button>
 </div>
 
 <div id="print-msg" class="print-msg no-print" role="alert" hidden></div>
@@ -293,11 +209,9 @@
   </div>
 
   <h2>Items</h2>
-  <div class="v3-head" aria-hidden="true"><span>Brand</span><span>Collection</span><span>Model</span><span>Piece</span><span>Qty</span></div>
   <div id="v4bar" class="no-print"></div>
   <div id="items" class="items-wrap"></div>
   <div class="no-print"><button onclick="addItem()">+ Add item</button></div>
-  <div id="v2lines"></div>
 
   <div id="v4sum" class="v4sum"></div>
   <div class="signoff">
@@ -918,22 +832,12 @@ function addItem(){
   const styleWrap = field({id:'style',label:'Style / SKU',span:1,placeholder:HAS_SKUS?'Type SKU or name':''},uid);
   const styleIn = styleWrap.querySelector('input');
   if (HAS_SKUS) styleIn.setAttribute('list', skuList());
-  const descWrap = field({id:'desc',label:'Piece',span:3,placeholder:'e.g. Sofa'},uid);
-  const qtyWrap = field({id:'qty',label:'Qty',span:1},uid);
-  /* V3 cells: Collection + Piece split out of the Piece description, and written back into it */
-  const collWrap = field({id:'v3coll',label:'Collection',span:1},uid);
-  const pieceWrap = field({id:'v3piece',label:'Piece',span:1,placeholder:'e.g. Sofa'},uid);
-  styleWrap.classList.add('f-style'); descWrap.classList.add('v1only'); qtyWrap.classList.add('f-qty');
-  collWrap.classList.add('v3only','f-coll'); pieceWrap.classList.add('v3only','f-piece');
   const base = el('div',{class:'grid base-row'},[
-    el('div',{class:'f s1 f-brand'},[el('label',{for:brandSel.id,text:'Brand'}),brandSel]),
-    styleWrap, descWrap, qtyWrap, collWrap, pieceWrap,
+    el('div',{class:'f s1'},[el('label',{for:brandSel.id,text:'Brand'}),brandSel]),
+    styleWrap,
+    field({id:'desc',label:'Piece',span:3,placeholder:'e.g. Sofa'},uid),
+    field({id:'qty',label:'Qty',span:1},uid),
   ]);
-  [collWrap, pieceWrap].forEach(w=>w.querySelector('input').addEventListener('input',()=>{
-    const d = base.querySelector(`#${uid}-desc`);
-    d.value = [collWrap.querySelector('input').value.trim(), pieceWrap.querySelector('input').value.trim()].filter(Boolean).join(' ');
-    d.dataset.v3 = d.value;
-  }));
   base.querySelector(`#${uid}-qty`).value = '1';
   base.querySelector(`#${uid}-qty`).inputMode = 'numeric';
 
@@ -1649,8 +1553,10 @@ function itemSnapshot(it){
     const n = f.querySelector('input,select'); if (!n || n.disabled || !n.value.trim() || n.offsetParent===null) return;
     const lab = f.querySelector('label').textContent;
     if (/^(Build as|Collection|Bed size)$/.test(lab)) return;
-    const v = n.tagName==='SELECT' ? n.options[n.selectedIndex].text : n.value;
-    opts.push(`${lab}: ${v}`);
+    if (/^pattern/i.test(lab)) return;   // the cover's name now stands in for it (9/29: no fabric codes on the printout)
+    let v = n.tagName==='SELECT' ? n.options[n.selectedIndex].text : n.value;
+    if (n.tagName==='INPUT' && /fabric|leather|cover|pillow|body/i.test(lab)) v = v4Fabric(v.trim(), brand);
+    opts.push(`${lab.replace(/\s*(#|# \+ color)$/,'').replace(/^Fabric \/ leather$/,'Cover')}: ${v}`);
   });
   const sizeLine = bed ? [...bed.querySelectorAll('.bed-lines .k')].find(k=>k.textContent==='Size') : null;
   return { uid, brand, key, parts, opts,
@@ -1876,7 +1782,7 @@ function autoRoom(uid, brand, key){
    Skipped: item notes, dimensions and the auto-filled grade / pattern boxes, disabled or hidden
    fields, and blank extra items (no brand, nothing typed). Anything missing turns red and the
    page jumps to the first one. */
-const OPTIONAL = /-(notes|dims|grade|pattern|v3coll)$/;
+const OPTIONAL = /-(notes|dims|grade|pattern)$/;
 function requiredFields(){
   const out = ['store','date','lead','cname','cphone','cemail'].map(id=>document.getElementById(id));
   const items = [...itemsEl.querySelectorAll('.item')];
@@ -1955,7 +1861,6 @@ function tryPrint(){
     return;
   }
   msg.hidden = true;
-  if (document.body.classList.contains('v2')) renderV2();
   window.print();
 }
 /* clear a field's red as soon as it's filled; Ctrl/Cmd+P goes through the same check */
@@ -1985,91 +1890,20 @@ function setToday(){
 setToday();
 addItem();
 
-/* ---------- V2 layout (Zach 9/29): same entry form, prints items as a table ----------
-   Brand | Collection | Model | Piece | Qty, with each item's special-order options on a line underneath.
-   The original layout is untouched; the V2 button just switches which one prints. */
+/* ---------- Step-by-step entry (Zach 9/29 — was "V4"; the old layouts were retired) ----------
+   Uses the same item fields and logic as before, shown one item and one step at a time:
+   Item → Fabric/Finish → Pillows → Upgrades (or Bed) → Add to Order. Steps a piece doesn't take are skipped.
+   A piece from the same collection as one already on the order starts with that piece's choices (the set fill
+   for upholstery; Archbold finish/hardware below). Page 1 prints a written summary, page 2 the drawings. */
 const ARCH_COLLECTIONS = ['Alder 2 West','Alder Shaker','2 West','Chest Bed','Emmerson','Heritage','Pine','Portland','Shaker'];
-const MULTI_COLLECTIONS = ['Seneca Falls','EZ Motion'];
-function splitDesc(brand, desc, uid){
-  desc = String(desc||'').trim(); if (!desc) return ['', ''];
-  let list = brand==='Archbold' ? ARCH_COLLECTIONS : MULTI_COLLECTIONS;
-  if (brand==='Archbold'){
-    const cs = document.getElementById(`${uid}-collection`);
-    if (cs && cs.value) list = [cs.value].concat(list);
-  }
-  const hit = list.find(c=>desc.toLowerCase().startsWith(c.toLowerCase()+' '));
-  if (hit) return [hit, desc.slice(hit.length).trim()];
-  if (brand==='Archbold') return ['', desc];
-  const i = desc.indexOf(' ');
-  return i<0 ? ['', desc] : [desc.slice(0,i), desc.slice(i+1).trim()];
+function archCollection(desc, uid){
+  desc = String(desc||'').trim();
+  const cs = document.getElementById(`${uid}-collection`);
+  const list = (cs && cs.value ? [cs.value] : []).concat(ARCH_COLLECTIONS);
+  return list.find(c=>desc.toLowerCase().startsWith(c.toLowerCase()+' ')) || '';
 }
-function renderV2(){
-  const host = document.getElementById('v2lines'); if (!host) return;
-  const rows = [...itemsEl.querySelectorAll('.item')].map(it=>{
-    const x = itemSnapshot(it); if (!x) return '';
-    const [coll, piece] = splitDesc(x.brand, x.desc, x.uid);
-    const model = x.key || document.getElementById(`${x.uid}-style`).value.trim();
-    const opts = x.opts.map(o=>{ const i=o.indexOf(': '); return i<0 ? esc(o) : `<span class="k">${esc(o.slice(0,i))}:</span> ${esc(o.slice(i+2))}`; });
-    if (x.dims) opts.push(`<span class="k">Dimensions:</span> ${esc(x.dims)}`);
-    return `<tr><td>${esc(x.brand)}</td><td>${esc(coll)}</td><td class="mono">${esc(model)}</td><td>${esc(piece)}</td><td class="c-qty">${esc(x.qty)}</td></tr>`+
-      `<tr class="v2-opts"><td colspan="5">${opts.length ? opts.join(' &nbsp;·&nbsp; ') : '<span class="k">No special-order options</span>'}</td></tr>`;
-  }).join('');
-  host.innerHTML = `<p class="v2-cap">V2 print layout — this table is what prints. Fill items in above.</p>`+
-    `<table class="v2-table"><thead><tr><th class="c-brand">Brand</th><th class="c-coll">Collection</th><th class="c-model">Model</th><th>Piece</th><th class="c-qty">Qty</th></tr></thead>`+
-    `<tbody>${rows || '<tr><td colspan="5" class="v2-empty">No items yet.</td></tr>'}</tbody></table>`;
-}
-function setV2(on){
-  if (on && document.body.classList.contains('v4')) setV4(false);
-  if (on && document.body.classList.contains('v3')) setV3(false);
-  document.body.classList.toggle('v2', on);
-  document.getElementById('v2btn').setAttribute('aria-pressed', String(on));
-  try { localStorage.setItem('soV2', on ? '1' : ''); } catch(e){}
-  if (on) renderV2();
-}
-function toggleV2(){ setV2(!document.body.classList.contains('v2')); }
-let v2t; ['input','change'].forEach(ev=>document.addEventListener(ev, ()=>{
-  if (!document.body.classList.contains('v2')) return; clearTimeout(v2t); v2t = setTimeout(renderV2, 150); }));
-itemsEl.addEventListener('click', ()=>{ if (document.body.classList.contains('v2')) setTimeout(renderV2, 0); });
-window.addEventListener('beforeprint', ()=>{ if (document.body.classList.contains('v2')) renderV2(); });
-(function(){ let on = /[?&]v=?2\b/.test(location.search);
-  try { if (localStorage.getItem('soV2')==='1') on = true; } catch(e){}
-  if (on) setV2(true); })();
-
-/* ---------- V3 layout (Zach 9/29): spreadsheet entry + spreadsheet print ----------
-   Each item is one row — Brand | Collection | Model | Piece | Qty — with its special-order options as a shaded
-   row of cells underneath. Same fields and logic as the original layout (untouched); page 2 drawings print as before. */
-function v3Sync(){
-  itemsEl.querySelectorAll('.item').forEach(it=>{
-    const uid = it.querySelector('select[id$="-brand"]').id.replace(/-brand$/,'');
-    const d = document.getElementById(`${uid}-desc`), c = document.getElementById(`${uid}-v3coll`), p = document.getElementById(`${uid}-v3piece`);
-    if (!d || !c || !p || d.dataset.v3 === d.value) return;
-    const [coll, piece] = splitDesc(document.getElementById(`${uid}-brand`).value, d.value, uid);
-    c.value = coll; p.value = piece; d.dataset.v3 = d.value;
-  });
-}
-function setV3(on){
-  if (on && document.body.classList.contains('v4')) setV4(false);
-  if (on && document.body.classList.contains('v2')) setV2(false);
-  document.body.classList.toggle('v3', on);
-  document.getElementById('v3btn').setAttribute('aria-pressed', String(on));
-  try { localStorage.setItem('soV3', on ? '1' : ''); } catch(e){}
-  v3Sync();
-}
-function toggleV3(){ setV3(!document.body.classList.contains('v3')); }
-['input','change','click'].forEach(ev=>document.addEventListener(ev, ()=>setTimeout(v3Sync, 0)));
-window.addEventListener('beforeprint', v3Sync);
-(function(){ let on = /[?&]v=?3\b/.test(location.search);
-  try { if (localStorage.getItem('soV3')==='1') on = true; } catch(e){}
-  if (on) setV3(true); })();
-
-/* ---------- V4 layout (Zach 9/29): step-by-step entry, written summary on the printout ----------
-   Uses the same item fields as every other layout (the original is untouched) — V4 just shows one item
-   and one step at a time. Steps an item doesn't take are skipped. A piece from the same collection as one
-   already on the order starts with that piece's fabric, pillows and upgrades (the existing set fill for
-   upholstery; Archbold finish/hardware below), and every piece is written out in full on the printout. */
 const V4 = {cur:'', step:'item'};
 const V4_TITLES = {item:'Pick the item', fabric:'Pick the fabric', pillows:'Pick the pillows', upgrades:'Pick upgrades', bed:'Build the bed', review:'Review the order'};
-const V4_CHIPS = {item:'Item', fabric:'Fabric', pillows:'Pillows', upgrades:'Upgrades', bed:'Bed', review:'Review'};
 const isV4 = () => document.body.classList.contains('v4');
 const v4Items = () => [...itemsEl.querySelectorAll('.item')];
 const v4Uid = it => it.querySelector('select[id$="-brand"]').id.replace(/-brand$/,'');
@@ -2078,7 +1912,6 @@ function v4With(fn){ const b = document.body; const had = b.classList.contains('
 function v4Label(f){ const l = f.querySelector('label'); return l ? l.textContent.trim() : ''; }
 /* which step each field belongs to */
 function v4Tag(it){
-  const uid = v4Uid(it);
   it.querySelectorAll('[data-v4]').forEach(n=>delete n.dataset.v4);
   it.querySelectorAll('.base-row > .f, .item-notes > .f').forEach(f=>f.dataset.v4 = 'item');
   const bf = it.querySelector('.brand-fields');
@@ -2097,7 +1930,6 @@ function v4Steps(it){
   return ['item','fabric','pillows','upgrades','bed'].filter(k=>have.has(k)).concat(['review']);
 }
 function v4Render(){
-  if (!isV4()) return;
   const items = v4Items();
   if (!items.length) return;
   if (!v4Item(V4.cur)) V4.cur = v4Uid(items[items.length-1]);
@@ -2107,121 +1939,124 @@ function v4Render(){
   document.body.classList.toggle('v4-review', review);
   items.forEach(x=>x.classList.toggle('v4-off', review || x!==it));
   it.querySelectorAll('[data-v4]').forEach(n=>{ const k = n.dataset.v4; if (k==='wrap') return; n.classList.toggle('v4-off', k!==V4.step); });
-  const bf = it.querySelector('.brand-fields');
-  bf.classList.toggle('v4-off', !['fabric','pillows','upgrades','bed'].includes(V4.step));
+  it.querySelector('.brand-fields').classList.toggle('v4-off', !['fabric','pillows','upgrades','bed'].includes(V4.step));
   it.querySelector('.base-row').classList.toggle('v4-off', V4.step!=='item');
   it.querySelector('.item-notes').classList.toggle('v4-off', V4.step!=='item');
-  /* the bar */
   const brand = document.getElementById(`${V4.cur}-brand`).value, desc = document.getElementById(`${V4.cur}-desc`).value;
   const sku = document.getElementById(`${V4.cur}-style`).value.trim();
   const fabricTitle = brand==='Archbold' ? 'Pick the finish' : (/leather/i.test((document.getElementById(`${V4.cur}-coverType`)||{}).value||'') ? 'Pick the leather' : 'Pick the fabric');
   const title = V4.step==='fabric' ? fabricTitle : V4_TITLES[V4.step];
   const i = steps.indexOf(V4.step), n = items.indexOf(it)+1;
-  const others = items.length>1 && !review ? `<div class="v4-order">${items.map(x=>{ const u = v4Uid(x);
-      const t = [document.getElementById(`${u}-brand`).value, document.getElementById(`${u}-desc`).value].filter(Boolean).join(' ') || 'New item';
-      return `<div class="row ${u===V4.cur?'cur':''}"><span>${items.indexOf(x)+1}. ${esc(t)}</span>${u===V4.cur ? '<span>editing</span>' : `<button type="button" data-v4edit="${u}">Edit</button>`}</div>`; }).join('')}</div>` : '';
-  const chips = steps.map((k,j)=>`<span class="v4-chip ${k===V4.step?'now':(j<i?'done':'')}">${j+1} ${k==='fabric' && brand==='Archbold' ? 'Finish' : V4_CHIPS[k]}</span>`).join('');
-  const ctx = review ? `${items.length} item${items.length>1?'s':''} on this order` : `Item ${n}` + ([brand, desc, sku].filter(Boolean).length ? ' · ' + esc([brand, desc].filter(Boolean).join(' ')) + (sku ? ' · ' + esc(sku) : '') : '');
-  const next = review ? '' : `<button type="button" class="primary" data-v4go="${steps[i+1]}">${steps[i+1]==='review' ? 'Review order' : 'Next: ' + (steps[i+1]==='fabric' && brand==='Archbold' ? 'Finish' : V4_CHIPS[steps[i+1]])}</button>`;
-  const back = i>0 && !review ? `<button type="button" data-v4go="${steps[i-1]}">Back</button>` : (review ? `<button type="button" data-v4go="item">Back to item ${n}</button>` : '');
+  const ctx = review ? `${items.length} item${items.length>1?'s':''} on this order`
+    : `Item ${n}` + (brand || desc ? ' · ' + esc([brand, desc].filter(Boolean).join(' ')) + (sku ? ' · ' + esc(sku) : '') : '');
   const note = V4.step==='item' && n>1 && !sku ? `<div class="v4-note">Another piece from the same collection starts with the same fabric, pillows and upgrades — change anything on the next steps.</div>` : '';
-  document.getElementById('v4bar').innerHTML = others +
-    `<div class="v4-chips">${chips}</div><div class="v4-ctx">${ctx}</div><div class="v4-title">${title}</div>` + note +
-    (review ? '' : '');
-  const nav = `<div class="v4-nav no-print">${back}<span class="sp"></span>${review ? `<button type="button" data-v4add="1">+ Add another item</button><button type="button" class="primary" onclick="tryPrint()">Print</button>` : next}</div>`;
+  document.getElementById('v4bar').innerHTML = `<div class="v4-ctx">${ctx}</div><div class="v4-title">${title}</div>` + note;
+  /* one wide button: Next until the last choice, then Add to Order */
+  const last = steps[i+1]==='review';
+  const back = review ? `<button type="button" class="back" data-v4go="item">‹ Back to item ${n}</button>` : (i>0 ? `<button type="button" class="back" data-v4go="${steps[i-1]}">‹ Back</button>` : '');
+  const nav = review
+    ? `<button type="button" data-v4add="1">+ Add another item</button><button type="button" class="primary" onclick="tryPrint()">Print</button>${back}`
+    : `<button type="button" class="primary" data-v4go="${steps[i+1]}">${last ? 'Add to Order' : 'Next'}</button>${back}`;
   let navEl = document.getElementById('v4nav'); if (!navEl){ navEl = el('div',{id:'v4nav'}); itemsEl.after(navEl); }
-  navEl.innerHTML = nav;
+  navEl.innerHTML = `<div class="v4-nav no-print">${nav}</div>`;
   if (review) v4With(v4Summary);
 }
-/* ---------- the written summary ---------- */
+/* ---------- the written summary: line 1 the piece, line 2 fabric + pillows, line 3 upgrades ---------- */
 function v4Val(n){ return n.tagName==='SELECT' ? (n.selectedIndex>=0 ? n.options[n.selectedIndex].text : '') : n.value.trim(); }
 function v4Code(t){ const m = t.match(/^([A-Z0-9]{1,3}) [–-] (.+)$/); return m ? `${m[2]} (${m[1]})` : t; }
+const v4NoCode = t => { const m = t.match(/^[A-Z0-9]{1,3} [–-] (.+)$/); return m ? m[1] : t; };
 const v4Skip = t => !t || /^(no\b|none$|n\/a$|standard\b|no remote)/i.test(t);
-function v4Cover(v){ const nm = typeof coverName==='function' ? coverName(v) : ''; return nm && !v.toUpperCase().includes(nm.toUpperCase()) ? `${v} ${nm}` : v; }
+/* fabric name without its code: GALPAR Galactic Parchment -> Galactic Parchment.
+   La-Z-Boy (color lives only in the number) and Bassett leather (names repeat across series) keep the code. */
+function v4Fabric(v, brand){
+  if (brand==='La-Z-Boy') return v;
+  if (brand==='Bassett' && BASSETT_LEATHER[String(v).slice(0,4)]) return v;
+  const nm = typeof coverName==='function' ? coverName(v) : '';
+  if (nm) return nm;
+  const m = v.match(/^(\S*\d\S*|[A-Z]{4,})\s+(.+)$/); return m ? m[2] : v;
+}
 function v4Describe(uid){
   const it = v4Item(uid); const bf = it.querySelector('.brand-fields');
-  const parts = [];
+  const brand = document.getElementById(`${uid}-brand`).value;
+  const l2 = [], l3 = [];
   if (bf.querySelector('.bed-block')){
-    bf.querySelectorAll('.bed-lines .k').forEach(k=>{ const v = k.nextSibling && k.nextSibling.textContent.trim(); if (v && k.textContent!=='Size') parts.push(`${k.textContent.toLowerCase()} ${v}`); });
-    return parts.join(', ');
+    bf.querySelectorAll('.bed-lines .k').forEach(k=>{ const v = k.nextSibling && k.nextSibling.textContent.trim(); if (!v || k.textContent==='Size') return;
+      (/finish|fabric/i.test(k.textContent) ? l2 : l3).push(`${k.textContent.toLowerCase()} ${v}`); });
+    return [l2.join(', '), l3.join(', ')];
   }
   const get = f => { const n = f.querySelector('input,select'); return n && !n.disabled && n.offsetParent!==null ? v4Val(n) : ''; };
   const fs = [...bf.querySelectorAll('.f')].filter(f=>!f.classList.contains('empty-note'));
   const byLab = re => fs.filter(f=>re.test(v4Label(f)));
   const used = new Set();
-  /* fabric / leather / finish */
   const typeF = byLab(/^cover type$/i)[0]; const type = typeF ? get(typeF) : '';
   const coverF = byLab(/^(cover # \+ color|fabric #|leather #|fabric \/ leather #|body fabric)$/i)[0];
   [typeF].concat(byLab(/^(pattern name|pattern · color|grade)$/i)).forEach(f=>f && used.add(f));
-  if (coverF){ used.add(coverF); const v = get(coverF); if (v) parts.push(`in ${v4Cover(v)} ${(type || 'fabric').toLowerCase()}`); }
-  byLab(/^(finish|finish \/ stain)$/i).forEach(f=>{ used.add(f); const v = get(f); if (v) parts.push(`in ${v4Code(v)} finish`); });
-  byLab(/^headboard fabric$/i).forEach(f=>{ used.add(f); const v = get(f); if (v) parts.push(`${v4Code(v)} headboard fabric`); });
-  /* pillows */
+  if (coverF){ used.add(coverF); const v = get(coverF); if (v) l2.push(`in ${v4Fabric(v, brand)} ${(type || 'fabric').toLowerCase()}`); }
+  byLab(/^(finish|finish \/ stain)$/i).forEach(f=>{ used.add(f); const v = get(f); if (v) l2.push(`in ${v4NoCode(v)} finish`); });
+  byLab(/^headboard fabric$/i).forEach(f=>{ used.add(f); const v = get(f); if (v) l2.push(`${v4NoCode(v)} headboard fabric`); });
   const pv = byLab(/pillow/i).map(f=>{ used.add(f); return get(f); });
   if (pv.filter(Boolean).length){
-    if (pv.every(v=>v===pv[0])) parts.push(`${v4Cover(pv[0])} pillows`);
-    else pv.forEach((v,j)=>{ if (v) parts.push(`pillow ${j+1} in ${v4Cover(v)}`); });
+    if (pv.every(v=>v===pv[0])) l2.push(`${v4Fabric(pv[0], brand)} pillows`);
+    else pv.forEach((v,j)=>{ if (v) l2.push(`pillow ${j+1} in ${v4Fabric(v, brand)}`); });
   }
-  /* upgrades: everything else that isn't a "no / standard" choice */
   fs.filter(f=>!used.has(f)).forEach(f=>{
     const L = v4Label(f); if (/^(collection|bed size|build as)$/i.test(L)) return;
     let v = get(f); if (v4Skip(v)) return;
-    if (/^yes$/i.test(v)) { parts.push(L.replace(/\s*\(.*\)$/,'')); return; }
+    if (/^yes$/i.test(v)) { l3.push(L.replace(/\s*\(.*\)$/,'')); return; }
     v = v4Code(v);
     if (/^hardware$/i.test(L)) v += ' hardware'; else if (/^feet/i.test(L)) v += ' feet'; else if (/^arm style$/i.test(L)) v = v.toLowerCase();
-    parts.push(v);
+    l3.push(v);
   });
-  return parts.join(', ');
+  return [l2.join(', '), l3.join(', ')];
 }
 function v4Summary(){
   const host = document.getElementById('v4sum');
   const items = v4Items().map(it=>{
     const uid = v4Uid(it), brand = document.getElementById(`${uid}-brand`).value; if (!brand) return null;
     const key = HAS_SKUS ? findSku(document.getElementById(`${uid}-style`).value) : null;
-    return {uid, brand, key, sku: key || document.getElementById(`${uid}-style`).value.trim(),
+    const [l2, l3] = v4Describe(uid);
+    return {uid, brand, sku: key || document.getElementById(`${uid}-style`).value.trim(),
       desc: document.getElementById(`${uid}-desc`).value.trim(), qty: document.getElementById(`${uid}-qty`).value || '1',
-      dims: document.getElementById(`${uid}-dims`).value.trim(), room: autoRoom(uid, brand, key) || '', line: v4Describe(uid)};
+      room: autoRoom(uid, brand, key) || '', l2, l3};
   }).filter(Boolean);
   if (!items.length){ host.innerHTML = '<p class="empty-note">No items yet.</p>'; return; }
   const rooms = [...new Set(items.map(x=>x.room))];
   host.innerHTML = rooms.map(r=>(rooms.length>1 || r ? `<h3>${esc(r || 'Items')}</h3>` : '') + items.filter(x=>x.room===r).map(x=>
-    `<div class="v4s-item"><div class="v4s-head"><div class="v4s-name">${esc(x.qty)} × ${esc(x.brand)} ${esc(x.desc)} ${x.sku ? `<span class="v4s-sku">· ${esc(x.sku)}</span>` : ''}</div>`+
+    `<div class="v4s-item"><div class="v4s-head"><div class="v4s-name">${esc(x.qty)} × ${esc(x.brand)} ${esc(x.desc)}${x.sku ? ` · ${esc(x.sku)}` : ''}</div>`+
     `<button type="button" class="no-print" data-v4edit="${x.uid}">Edit</button></div>`+
-    (x.line ? `<div class="v4s-line">${esc(x.line)}</div>` : '')+
-    (x.dims ? `<div class="v4s-dims">${esc(x.dims)}</div>` : '')+`</div>`).join('')).join('');
+    (x.l2 ? `<div class="v4s-line">${esc(x.l2)}</div>` : '')+
+    (x.l3 ? `<div class="v4s-line">${esc(x.l3)}</div>` : '')+`</div>`).join('')).join('');
 }
 /* Archbold: a piece from a collection already on the order starts with that piece's finish/hardware/fabric */
 function v4ArchFill(uid){
   const key = findSku(document.getElementById(`${uid}-style`).value); if (!key || (SKUS[key]||{}).b!=='Archbold') return;
-  const coll = splitDesc('Archbold', SKUS[key].d, uid)[0]; if (!coll) return;
+  const coll = archCollection(SKUS[key].d, uid); if (!coll) return;
   const src = v4Items().map(v4Uid).find(u=>{ if (u===uid) return false;
-    const k = findSku(document.getElementById(`${u}-style`).value); return k && (SKUS[k]||{}).b==='Archbold' && splitDesc('Archbold', SKUS[k].d, u)[0]===coll; });
+    const k = findSku(document.getElementById(`${u}-style`).value); return k && (SKUS[k]||{}).b==='Archbold' && archCollection(SKUS[k].d, u)===coll; });
   if (!src) return;
   v4Item(uid).querySelectorAll('.brand-fields select[id*="-opt-"]').forEach(t=>{
     const s2 = document.getElementById(`${src}-${t.id.slice(uid.length+1)}`);
     if (s2 && s2.value && !t.value) secPut(t, s2.value);
   });
 }
-document.addEventListener('input', e=>{ if (isV4() && /-style$/.test(e.target.id||'')){ const u = e.target.id.replace(/-style$/,''); setTimeout(()=>{ v4ArchFill(u); v4Render(); }, 30); } });
+document.addEventListener('input', e=>{ if (/-style$/.test(e.target.id||'')){ const u = e.target.id.replace(/-style$/,''); setTimeout(()=>{ v4ArchFill(u); v4Render(); }, 30); } });
 function v4Go(step){ V4.step = step; v4Render(); window.scrollTo({top: document.getElementById('v4bar').getBoundingClientRect().top + scrollY - 70, behavior:'smooth'}); }
 document.addEventListener('click', e=>{
-  if (!isV4()) return;
   const t = e.target.closest && e.target.closest('[data-v4go],[data-v4edit],[data-v4add]'); if (!t) return;
   if (t.dataset.v4go) v4Go(t.dataset.v4go);
   else if (t.dataset.v4edit){ V4.cur = t.dataset.v4edit; v4Go('item'); }
-  else { addItem(); }
+  else addItem();
 });
 /* a new item (toolbar or review) becomes the one being edited */
-new MutationObserver(ms=>{ if (!isV4()) return;
+new MutationObserver(ms=>{
   const added = ms.flatMap(m=>[...m.addedNodes]).filter(n=>n.classList && n.classList.contains('item'));
   if (added.length){ V4.cur = v4Uid(added[added.length-1]); V4.step = 'item'; }
   v4Render(); }).observe(itemsEl, {childList:true});
-let v4t; ['input','change'].forEach(ev=>document.addEventListener(ev, ()=>{ if (!isV4()) return; clearTimeout(v4t); v4t = setTimeout(v4Render, 60); }));
+let v4t; ['input','change'].forEach(ev=>document.addEventListener(ev, ()=>{ clearTimeout(v4t); v4t = setTimeout(v4Render, 60); }));
 /* printing checks every item, not just the one on screen; a miss jumps to its item and step */
-const tryPrintV1 = tryPrint;
+const tryPrintBase = tryPrint;
 tryPrint = function(){
-  if (!isV4()) return tryPrintV1();
-  v4With(()=>{ v4Items().forEach(v4Tag); v4Summary(); tryPrintV1(); });
+  v4With(()=>{ v4Items().forEach(v4Tag); v4Summary(); tryPrintBase(); });
   const bad = document.querySelector('.missing');
   if (bad){
     const it = bad.closest('.item');
@@ -2229,26 +2064,14 @@ tryPrint = function(){
     v4Render(); setTimeout(()=>{ bad.scrollIntoView({block:'center'}); bad.focus({preventScroll:true}); }, 50);
   }
 };
-const renderPage2V1 = renderPage2;
-renderPage2 = function(){ return isV4() ? v4With(renderPage2V1) : renderPage2V1(); };
-/* while printing, keep every field "on screen" (the item cards are hidden by the print CSS instead) so
-   the summary and the drawings page read the real values */
-window.addEventListener('beforeprint', ()=>{ if (isV4()){ document.body.classList.add('v4-check'); v4Items().forEach(v4Tag); v4Summary(); renderPage2V1(); } });   // page 2's own beforeprint ran before this could show the fields
-window.addEventListener('afterprint', ()=>{ if (isV4()) document.body.classList.remove('v4-check'); });
-function setV4(on){
-  if (on && document.body.classList.contains('v2')) setV2(false);
-  if (on && document.body.classList.contains('v3')) setV3(false);
-  document.body.classList.toggle('v4', on);
-  document.body.classList.toggle('v4-review', false);
-  document.getElementById('v4btn').setAttribute('aria-pressed', String(on));
-  try { localStorage.setItem('soV4', on ? '1' : ''); } catch(e){}
-  if (on){ V4.step = 'item'; v4Render(); }
-  else { const n = document.getElementById('v4nav'); if (n) n.innerHTML = ''; document.getElementById('v4sum').innerHTML = ''; queuePage2(); }
-}
-function toggleV4(){ setV4(!isV4()); }
-(function(){ let on = /[?&]v=?4\b/.test(location.search);
-  try { if (localStorage.getItem('soV4')==='1') on = true; } catch(e){}
-  if (on) setV4(true); })();
+/* page 2 reads option fields that stay off-screen here: render it with everything showing */
+const renderPage2Base = renderPage2;
+renderPage2 = function(){ return v4With(renderPage2Base); };
+/* while printing keep every field "on screen" (the item cards are hidden by the print CSS instead) so the
+   summary and the drawings read the real values; page 2's own beforeprint ran before this, so redo it */
+window.addEventListener('beforeprint', ()=>{ document.body.classList.add('v4-check'); v4Items().forEach(v4Tag); v4Summary(); renderPage2Base(); });
+window.addEventListener('afterprint', ()=>{ document.body.classList.remove('v4-check'); });
+v4Render();
 
 /* ---------- Two copies per print (Zach 9/25) ----------
    A page can't set the print dialog's copy count, so the whole order (page 1 + the drawings page) is
