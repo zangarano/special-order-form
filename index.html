@@ -157,6 +157,7 @@
   /* ---------- Step-by-step entry (the V4 layout, main version since 2026-09-29) ----------
      One item and one step at a time; the printout is a written summary, drawings on page 2. */
   body.v4:not(.v4-check) .v4-off{display:none!important}
+  .v4-msg{color:var(--danger);font-weight:600;margin:8px 0 0}
   /* bed parts: headboard over footboard on the left, pedestals on the right */
   .bed-controls:has(.bed-p1) .bed-hb,.bed-controls:has(.bed-p1) .bed-fb{grid-column:1 / span 3}
   .bed-controls:has(.bed-p1) .bed-p1,.bed-controls:has(.bed-p1) .bed-p2{grid-column:4 / span 3}
@@ -1985,7 +1986,8 @@ function v4Render(){
     ? `<button type="button" data-v4add="1">+ Add another item</button><button type="button" class="primary" onclick="tryPrint()">Print</button>${back}`
     : `<button type="button" class="primary" data-v4go="${steps[i+1]}">${last ? 'Add to Order' : 'Next'}</button>${back}`;
   let navEl = document.getElementById('v4nav'); if (!navEl){ navEl = el('div',{id:'v4nav'}); itemsEl.after(navEl); }
-  navEl.innerHTML = `<div class="v4-nav no-print">${nav}</div>`;
+  const stillRed = !review && it.querySelector('.missing');
+  navEl.innerHTML = `<div id="v4msg" class="v4-msg no-print"${stillRed ? '' : ' hidden'}>${stillRed ? 'Fill in the highlighted fields before moving on.' : ''}</div><div class="v4-nav no-print">${nav}</div>`;
   v4With(()=>v4Summary(review ? '' : V4.cur));
 }
 /* ---------- the written summary: line 1 the piece, line 2 fabric + pillows, line 3 upgrades ---------- */
@@ -2083,6 +2085,21 @@ function v4ArchFill(uid){
   });
 }
 document.addEventListener('input', e=>{ if (/-style$/.test(e.target.id||'')){ const u = e.target.id.replace(/-style$/,''); setTimeout(()=>{ v4ArchFill(u); v4Render(); }, 30); } });
+/* Zach 9/30: if an option is showing, it's required. Next / Add to Order won't move on while any field
+   visible on this step is blank (same rules as the print check: notes, dims and the auto-filled
+   grade / pattern boxes stay optional; hidden or disabled fields don't count). */
+function v4StepOK(){
+  const it = v4Item(V4.cur); if (!it || V4.step==='review') return true;
+  it.querySelectorAll('.missing').forEach(n=>{ n.classList.remove('missing'); const f=n.closest('.f'); if (f) f.classList.remove('err'); });
+  const bad = [...it.querySelectorAll('input,select,textarea')].filter(n=>
+    !n.disabled && !OPTIONAL.test(n.id) && n.offsetParent!==null && isMissing(n));
+  const msg = document.getElementById('v4msg');
+  if (!bad.length){ if (msg) msg.hidden = true; return true; }
+  bad.forEach(n=>{ n.classList.add('missing'); const f=n.closest('.f'); if (f) f.classList.add('err'); });
+  if (msg){ msg.textContent = `Fill in ${bad.map(n=>{ const f=n.closest('.f'); return f ? v4Label(f) : ''; }).filter(Boolean).join(', ') || 'the highlighted field'} before moving on.`; msg.hidden = false; }
+  bad[0].scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(()=>bad[0].focus({preventScroll:true}), 200);
+  return false;
+}
 /* keep the running list in view: jump to it on a new/edited item; between steps only scroll if the step went off-screen */
 function v4Go(step, top){
   V4.step = step; v4Render();
@@ -2095,6 +2112,7 @@ document.addEventListener('click', e=>{
     const n = document.getElementById(`${V4.cur}-style`); n.classList.add('missing'); const f = n.closest('.f'); if (f) f.classList.add('err');
     n.focus(); return;
   }
+  if (t.dataset.v4go && !t.classList.contains('back') && !v4StepOK()) return;
   if (t.dataset.v4go) v4Go(t.dataset.v4go);
   else if (t.dataset.v4edit){ V4.cur = t.dataset.v4edit; v4Go('item', true); }
   else { addItem(); v4Go('item', true); }
