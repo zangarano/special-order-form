@@ -61,6 +61,12 @@
   header.top{position:relative}
   .order-no{position:absolute;top:0;right:0;font-size:12px;color:var(--muted);text-align:right}
   .save-msg{position:sticky;top:52px;z-index:4;max-width:850px;margin:10px auto 0;padding:9px 14px;border-radius:6px;font-weight:600;font-size:13px}
+  .save-msg button{margin-left:6px;padding:4px 10px;font-size:12.5px}
+  #print-block{display:none}
+  @media print{
+    body:not(.print-ok) > *:not(#print-block){display:none!important}
+    body:not(.print-ok) #print-block{display:block!important;font:16px/1.5 Arial,sans-serif;padding:40px 10px}
+  }
   .save-msg.ok{background:#dcfce7;color:#166534}.save-msg.bad{background:#fef3c7;color:#78350f}.save-msg.wait{background:var(--alt);color:var(--ink)}
   .empty-note{color:var(--muted);font-size:13px;padding:6px 0}
   input.bad{outline:2px solid var(--danger);outline-offset:-1px}
@@ -201,6 +207,7 @@
 
 <div id="print-msg" class="print-msg no-print" role="alert" hidden></div>
 <div id="save-msg" class="save-msg no-print" role="status" hidden></div>
+<div id="print-block">This order has not been saved yet.<br><br>Close this print window and press the red <b>Print</b> button at the top of the form &mdash; it saves the order to SIMON and then prints it.</div>
 <main class="sheet order-sheet" id="sheet">
   <header class="top">
     <div class="order-no" id="order-no"></div>
@@ -2103,6 +2110,7 @@ function v4StepOK(){
 /* keep the running list in view: jump to it on a new/edited item; between steps only scroll if the step went off-screen */
 function v4Go(step, top){
   V4.step = step; v4Render();
+  if (step==='review') checkpoint();   // an item was just added to the order: save a draft to SIMON, silently
   const t = top ? document.getElementById('v4sum') : document.getElementById('v4bar'), r = t.getBoundingClientRect();
   if (top || r.top < 60 || r.top > innerHeight - 120) window.scrollTo({top: r.top + scrollY - 70, behavior:'smooth'});
 }
@@ -2188,7 +2196,10 @@ function tsInit(){
   tsWidget = turnstile.render(box, {sitekey:TURNSTILE_SITEKEY, appearance:'interaction-only',
     callback:t=>{ tsCur = t; tsWaiters.splice(0).forEach(f=>f(t)); },
     'expired-callback':()=>{ tsCur = ''; turnstile.reset(tsWidget); },
-    'error-callback':()=>{ tsCur = ''; return true; }});
+    /* a failed check used to sit dead until the page was reloaded, so every later print failed too —
+       try again a few seconds later (2026-10-01) */
+    'error-callback':()=>{ tsCur = ''; setTimeout(()=>{ try { turnstile.reset(tsWidget); } catch(e){} }, 3000); return true; },
+    'before-interactive-callback':()=>{ if (saving) saveMsg('wait', `Almost saved — tick the box in the bottom-right corner to finish saving ${ORDER.id}.`); }});
 }
 function tsToken(){
   if (!TURNSTILE_SITEKEY || !window.turnstile) return Promise.resolve('');
@@ -2202,11 +2213,12 @@ function tsToken(){
   });
 }
 if (TURNSTILE_SITEKEY){ const sc = document.createElement('script'); sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; sc.async = true; sc.onload = tsInit; document.head.appendChild(sc); }
-async function saveOrder(keepalive){
+async function saveOrder(keepalive, draft){
   const body = orderPayload();
   if (!body.items.length) throw new Error('no items');
+  if (draft) body.draft = true;
   body.turnstile = keepalive ? '' : await tsToken();
-  const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), 8000);
+  const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), 15000);
   try {
     const r = await fetch(SIMON_SAVE_URL, {method:'POST', mode:'cors', keepalive:!!keepalive, signal:ctl.signal,
       headers:{'Content-Type':'text/plain'}, body:JSON.stringify(body)});
@@ -2215,21 +2227,66 @@ async function saveOrder(keepalive){
   } finally { clearTimeout(t); }
 }
 function saveMsg(kind, text){ const m = document.getElementById('save-msg'); m.className = `save-msg no-print ${kind}`; m.textContent = text; m.hidden = false; }
+/* Print only once SIMON has the order (Zach 2026-10-01, replacing 9/29's "print anyway").
+   An order printed on 10/1 never reached SIMON. Two holes let that happen: printing from the browser's own
+   menu sent no bot-check pass, so SIMON refused it with nothing on screen; and a failed save printed anyway
+   and never retried. Now Print waits for SIMON to confirm. If it can't save, nothing prints: the rep gets
+   the reason, a Try again button, and "Print without saving" as a last resort for a real outage.
+   The browser's own print (menu, toolbar icon) can't be held back, so the page prints a "use the Print
+   button" notice instead of the order unless the save has gone through — see #print-block. */
 const realPrint = window.print.bind(window);
 let saving = false;
+function saveFail(e){
+  const why = e.message==='id in use' ? `${ORDER.id} was reopened from SIMON in another tab — print from that tab.`
+    : e.message==='order was deleted' ? `${ORDER.id} was deleted in SIMON. Clear the form to start a new order.`
+    : e.message==='bot check failed' ? `the security check didn't go through.`
+    : e.name==='AbortError' ? `SIMON didn't answer.` : `${e.message}.`;
+  const m = document.getElementById('save-msg');
+  m.className = 'save-msg no-print bad'; m.hidden = false; m.textContent = '';
+  m.append(`Not printed — couldn't save to SIMON: ${why} `);
+  const again = el('button',{type:'button',text:'Try again'}); again.onclick = ()=>window.print();
+  const force = el('button',{type:'button',class:'link',text:'Print without saving'});
+  force.onclick = ()=>{
+    if (!window.confirm(`Print ${ORDER.id} WITHOUT saving it to SIMON?\n\nOnly do this if SIMON is down. The order will not be in SIMON until it is printed again and saves.`)) return;
+    saveMsg('bad', `Printed WITHOUT saving — ${ORDER.id} is not in SIMON. Press Print again once SIMON is back to save it.`);
+    printNow();
+  };
+  m.append(again, ' ', force);
+}
+function printNow(){ ORDER.printing = true; document.body.classList.add('print-ok'); realPrint(); }
+/* Silent checkpoint (Zach 2026-10-01: "save as it's written … preferably invisible"). Every time an item is
+   added to the order (the review screen opens) the order goes to SIMON as a draft, marked "not printed yet".
+   Nothing shows on screen either way; a checkpoint that fails is simply overtaken by the next one, and Print
+   is still the save that counts. Drafts don't add to the print count. */
+let cpTimer = null, cp = null, cpAgain = false;
+function checkpoint(){
+  clearTimeout(cpTimer);
+  cpTimer = setTimeout(()=>{
+    if (saving || ORDER.printing) return;
+    if (cp){ cpAgain = true; return; }
+    cp = saveOrder(false, true).catch(()=>{}).finally(()=>{ cp = null; if (cpAgain){ cpAgain = false; checkpoint(); } });
+  }, 600);
+}
 window.print = function(){
   if (saving) return;
   saving = true; saveMsg('wait', `Saving ${ORDER.id} to SIMON…`);
-  saveOrder(false)
-    .then(()=>saveMsg('ok', `Saved to SIMON · ${ORDER.id}`))
-    .catch(e=>saveMsg('bad', e.message==='id in use' ? `Not saved: ${ORDER.id} was reopened from SIMON in another tab — print from that tab. (Printed anyway.)`
-      : e.message==='order was deleted' ? `Not saved: ${ORDER.id} was deleted in SIMON. Clear the form to start a new order. (Printed anyway.)`
-      : `Couldn't save to SIMON (${e.name==='AbortError' ? 'no response' : e.message}) — printed anyway. Printing again will retry.`))
-    .finally(()=>{ saving = false; ORDER.printing = true; realPrint(); });
+  clearTimeout(cpTimer); cpAgain = false;
+  /* let a checkpoint in flight finish first — both would otherwise wait on the same one-use security pass */
+  Promise.resolve(cp).then(()=>saveOrder(false))
+    .then(()=>{ saveMsg('ok', `Saved to SIMON · ${ORDER.id}`); saving = false; printNow(); })
+    .catch(e=>{ saving = false; saveFail(e); });
 };
-/* printing from the browser menu skips the button — still send it */
-window.addEventListener('beforeprint', ()=>{ if (!ORDER.printing && !saving) saveOrder(true).catch(()=>{}); });
-window.addEventListener('afterprint', ()=>{ ORDER.printing = false; });
+/* printing from the browser menu skips the button: still try to send it, using the pass fetched at page
+   load (a blank pass is always refused). What prints is the notice, not the order. */
+window.addEventListener('beforeprint', ()=>{
+  if (ORDER.printing || saving) return;
+  const t = tsCur; if (t){ tsCur = ''; setTimeout(()=>{ try { turnstile.reset(tsWidget); } catch(e){} }, 0); }
+  const body = (()=>{ try { const b = orderPayload(); b.turnstile = t; return b; } catch(e){ return null; } })();
+  if (body && body.items.length) fetch(SIMON_SAVE_URL, {method:'POST', mode:'cors', keepalive:true,
+    headers:{'Content-Type':'text/plain'}, body:JSON.stringify(body)}).catch(()=>{});
+  saveMsg('bad', `Use the red Print button at the top — it saves ${ORDER.id} to SIMON first. The browser's own print only prints a reminder.`);
+});
+window.addEventListener('afterprint', ()=>{ ORDER.printing = false; document.body.classList.remove('print-ok'); });
 
 /* ---------- Reopen from SIMON (Zach 9/29) ----------
    Each saved item carries its raw field values (itemState) so SIMON's "Reopen in form" can rebuild it
