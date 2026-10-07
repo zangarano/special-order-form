@@ -1373,6 +1373,8 @@ function secArrange(pcs, gk){
   /* England Collegedale -25 floating ottoman chaise: not part of the run — it sits in front of a free end of the
      back run (book p.43: -25 + 6205 sofa = 79 × 58; -28,-39,-63,-25 = 85 × 109) */
   const floats = pcs.filter(isFloat); pcs = pcs.filter(p=>!isFloat(p));
+  /* England Tyler (1Q00) is fully modular — Zach 2026-10-07: no layout rules, nothing blocks printing */
+  const tyler = isTyler(pcs[0]);
   const single = pcs.length===1 && armsFor(pcs[0].e)==='both';
   const Ls = pcs.filter(p=>endSide(p.e)==='L'), Rs = pcs.filter(p=>endSide(p.e)==='R');
   const mids = pcs.filter(p=>!endSide(p.e)), corners = pcs.filter(p=>p.corner || p.cornerSofa);
@@ -1394,12 +1396,15 @@ function secArrange(pcs, gk){
   const jd = (pcs.find(p=>!/Cuddler|Chaise/i.test(p.e.d)) || {}).D;
   /* England Tyler (1Q00) tear sheet: a corner wedge at the very end of a run is an end cap (no turn); the
      large ottoman goes at an end and makes a leg, turning at the nearest corner (-10,-22,-39,-39,-22 = 161 × 88) */
-  const tyler = isTyler(pcs[0]);
   const isOtt = p => /Ottoman/i.test(p.e.d);
   const tylerize = seq => {
     seq = seq.map(p=>({...p}));
     const n = seq.length;
     [0, n-1].forEach((i, side)=>{ const p = seq[i]; if (n>1 && p.corner && !isOtt(p)) { p.corner = false; p.cap = true; p.ov = {...(p.ov||{}), arms: side ? 'capR' : 'capL'}; } });
+    /* the drawing can show at most two turns (an L or a U): any further wedges are drawn in line */
+    seq.filter(p=>p.corner).slice(2).forEach(p=>{ p.corner = false; });
+    /* two wedges side by side can't both turn — draw the second in line */
+    for (let i=1;i<n;i++) if (seq[i].corner && seq[i-1].corner) seq[i].corner = false;
     return seq;
   };
   const build = ids => {
@@ -1471,6 +1476,7 @@ function secArrange(pcs, gk){
     if (!Ls.length) errors.push('The left end has no arm. Every sectional needs a left-arm piece (LAF, left chaise, cuddler…) at its left end.');
     if (!Rs.length) errors.push('The right end has no arm. Every sectional needs a right-arm piece (RAF, right chaise, cuddler…) at its right end.');
   }
+  if (tyler){ errors.length = 0; warns.length = 0; }
   let force = null;
   const fixable = !hard && (Ls.length || Rs.length || openOK) && errors.every(e=>/drag/i.test(e));
   return {ordered, errors, warns, st, Ls, Rs, mids, corners, force, fixable, floats};
@@ -1656,15 +1662,15 @@ function renderPage2(){
     const ext = units.map(u=>{
       if (!u.items) return extent(u.single);
       if (u.mismatch) return null;
-      const pcs = secPieces(u.items), A = secArrange(pcs, groupKey(u.items)); if (A.errors.length) return null;
-      const r = sectionalSVG(A.ordered, 1, A.st.flip, A.force, A.floats, A.st.fside); return [r.W*190/420, r.H*125/200];
+      try { const pcs = secPieces(u.items), A = secArrange(pcs, groupKey(u.items)); if (A.errors.length) return null;
+      const r = sectionalSVG(A.ordered, 1, A.st.flip, A.force, A.floats, A.st.fside); return [r.W*190/420, r.H*125/200]; } catch(err){ console.error(err); return null; }
     }).filter(Boolean);
     const s = ext.length ? Math.min(2.2, ...ext.map(([w,h])=>Math.min(190/w, 125/h))) : 1;
     html += `<section class="p2-room"><h3>${room}</h3><div class="p2-grid">`;
     for (const u of units){
       if (u.mismatch){ html += `<div class="p2-card p2-sec p2-sec-err"><div class="sec-err"><b>This sectional can't be built as entered.</b><ul><li>${esc(u.mismatch)}</li></ul>Fix the items above; printing is blocked until it's fixed.</div>`+
         `<div class="p2-title">${esc(u.items[0].brand)} sectional — ${u.items.length} pieces</div><div class="p2-sub">${u.items.map(x=>esc(x.key)).join(' · ')}</div></div>`; continue; }
-      if (u.items){ html += sectionalCard(u.items, s); continue; }
+      if (u.items){ try { html += sectionalCard(u.items, s); } catch(err){ console.error(err); html += `<div class="p2-card p2-sec"><div class="p2-title">${esc(u.items[0].brand)} sectional — ${u.items.length} pieces</div><div class="p2-sub">Drawing not available for this layout.</div></div>`; } continue; }
       const x = u.single;
       const svg = drawingFor(x, s);
       const view = x.parts ? 'Front view' : x.brand==='Archbold' ? 'Front view' : 'Top view · front edge in bold';
@@ -1702,7 +1708,8 @@ function sectionalCard(items, s){
   const optsSame = items.every(x=>x.opts.join('|')===first.opts.join('|'));
   const ft = v => inchTxt(Math.round(v*8)/8);
   let draw = '', dims = '';
-  if (!A.errors.length){ const r = sectionalSVG(A.ordered, s * 420/190, A.st.flip, A.force, A.floats, A.st.fside); draw = r.svg; dims = `Overall about ${Math.ceil(r.W - 0.05)}"W × ${Math.ceil(r.H - 0.05)}"D`; }
+  if (!A.errors.length){ try { const r = sectionalSVG(A.ordered, s * 420/190, A.st.flip, A.force, A.floats, A.st.fside); draw = r.svg; dims = `Overall about ${Math.ceil(r.W - 0.05)}"W × ${Math.ceil(r.H - 0.05)}"D`; }
+    catch(err){ console.error(err); draw = '<div class="p2-sub">Drawing not available for this layout.</div>'; } }
   /* rearrange bar (screen only): ends are locked, middle pieces drag (or use the arrows on a tablet) */
   const chip = (p, lock) => `<span class="sec-chip${lock ? ' lock' : ''}" ${lock ? '' : `draggable="true" data-g="${gk}" data-id="${p.id}"`}>`+
     (lock ? '' : `<button type="button" class="mv" data-g="${gk}" data-id="${p.id}" data-d="-1" aria-label="Move left">◀</button>`)+
