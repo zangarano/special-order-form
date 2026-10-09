@@ -1869,6 +1869,27 @@ function emailOK(v){ return /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(String(v).tri
 (()=>{ const m = document.getElementById('cemail'); if (!m) return;
   m.addEventListener('blur', ()=>{ m.value = m.value.trim().toLowerCase(); });
 })();
+/* Customer name capitalization (Zach 10/8): fixed when the rep leaves the box, and again on save.
+   Each word typed all lower or ALL UPPER gets a capital first letter ("john o'brien-smith" -> "John O'Brien-Smith",
+   "MCDONALD" -> "McDonald"). A word typed with mixed capitals (DeAngelo, McNeil) is kept as typed. Name particles
+   (van, der, de, la…) stay lower-case when the rep capitalized the rest ("Kim van der Berg"); Jr/Sr/II/III are kept. */
+const NAME_PARTICLES = /^(van|von|der|den|de|del|della|di|da|du|dos|das|la|le|bin|al)$/;
+function capWord(w){
+  if (!/[a-z]/i.test(w) || (w !== w.toLowerCase() && w !== w.toUpperCase())) return w;
+  if (/^(ii|iii|iv)$/i.test(w)) return w.toUpperCase();
+  return w.toLowerCase()
+    .replace(/(^|[-'’])([a-zà-ɏ])/g, (m, p, c) => p + c.toUpperCase())   // start, after - and '
+    .replace(/^Mc([a-z])/, (m, c) => 'Mc' + c.toUpperCase());                           // McDonald
+}
+function capName(v){
+  const words = String(v || '').trim().replace(/\s+/g, ' ').split(' ');
+  const typedCaps = words.some(w => /[A-Z]/.test(w));
+  return words.map((w, i) => (i > 0 && typedCaps && NAME_PARTICLES.test(w)) ? w : capWord(w)).join(' ');
+}
+(()=>{ const n = document.getElementById('cname'); if (!n) return;
+  n.setAttribute('autocapitalize', 'words');
+  n.addEventListener('blur', ()=>{ const c = capName(n.value); if (c !== n.value) { n.value = c; n.dispatchEvent(new Event('input', {bubbles:true})); } });
+})();
 /* Customer name: one box, but it needs a first AND last name (two or more words, each with a letter) */
 function nameOK(v){ return String(v).trim().split(/\s+/).filter(w=>/[A-Za-z\u00C0-\u024F]/.test(w)).length >= 2; }
 /* why a filled-in field still counts as missing — shown under the print message */
@@ -2190,7 +2211,7 @@ function orderPayload(){
     }).filter(Boolean);
     const v = id=>document.getElementById(id).value;
     return {id:ORDER.id, token:ORDER.token, rep:v('rep'), store:v('store'), date:v('date'), lead:v('lead'),
-      customer:{name:v('cname'), phone:v('cphone'), email:v('cemail')}, items};
+      customer:{name:capName(v('cname')), phone:v('cphone'), email:v('cemail')}, items};
   });
 }
 /* Turnstile (bot check) — only once a site key is set above.
