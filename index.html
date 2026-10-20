@@ -1360,6 +1360,7 @@ function seriesKey(brand, k){
   if (brand==='La-Z-Boy'){ const m = c.match(/(\d{3})(?!.*\d)/); return m ? m[1] : c.slice(-3); }   // e.g. Storis key "X4Q521Power" → 521
   if (brand==='Bassett') return k.split('-')[0];
   if (/^E36\d/.test(c)) return 'EZ36';   // EZ3600 vendor-model rows keyed E36xx
+  { const m = c.match(/^(\d{3})(\d{2})(LR|AL)$/); if (m) return `${m[1]}0L`; }   // England leather pieces drop the series' 0: 62505LR / 62523LR = Baylor 6250 leather
   return c.slice(0,4);   // England
 }
 /* ---------- Arranging a sectional ----------
