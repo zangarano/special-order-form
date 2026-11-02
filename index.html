@@ -179,6 +179,11 @@
   .v4-nav{display:flex;flex-direction:column;gap:8px;margin:16px 0 4px}
   .v4-nav button{width:100%;padding:12px 14px;font-size:15px}
   .v4-nav button.back{width:auto;align-self:flex-start;border:none;background:none;color:var(--muted);padding:4px 2px;font-size:13px}
+  .v4-low{display:flex;align-items:center;gap:10px}
+  .v4-low button.back{margin-left:auto}
+  .v4-nav button.cancel{width:auto;padding:5px 12px;font-size:12.5px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:6px}
+  .v4-nav button.cancel:hover{color:#991b1b;border-color:#991b1b}
+  .v4-nav button.cancel.del{color:#991b1b}
   .v4sum h3{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin:14px 0 4px;border-bottom:1px solid var(--line);padding-bottom:3px}
   .v4s-item{padding:8px 0;border-bottom:1px solid var(--line);break-inside:avoid;page-break-inside:avoid}
   .v4s-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
@@ -1940,7 +1945,7 @@ function clearForm(){
   document.querySelectorAll('#sheet input, #sheet select, #sheet textarea').forEach(n=>{
     if (n.tagName==='SELECT') n.selectedIndex=0; else n.value='';
   });
-  itemsEl.innerHTML=''; seq=0; leadAuto=true; addItem(); setToday();
+  itemsEl.innerHTML=''; seq=0; leadAuto=true; V4.added.clear(); addItem(); setToday();
   document.getElementById('rep').value = keepRep;
   document.getElementById('print-msg').hidden = true;
   if (typeof newOrder==='function') newOrder();
@@ -1966,7 +1971,7 @@ function archCollection(desc, uid){
   const list = (cs && cs.value ? [cs.value] : []).concat(ARCH_COLLECTIONS);
   return list.find(c=>desc.toLowerCase().startsWith(c.toLowerCase()+' ')) || '';
 }
-const V4 = {cur:'', step:'item'};
+const V4 = {cur:'', step:'item', added:new Set()};   // added = items that reached Add to Order (Cancel removes only the others)
 const V4_TITLES = {item:'Pick the item', fabric:'Pick the fabric', pillows:'Pick the pillows', upgrades:'Pick upgrades', bed:'Build the bed', review:'Review the order'};
 const isV4 = () => document.body.classList.contains('v4');
 const v4Items = () => [...itemsEl.querySelectorAll('.item')];
@@ -1992,6 +1997,31 @@ function v4Tag(it){
 function v4Steps(it){
   const have = new Set([...it.querySelectorAll('[data-v4]')].map(n=>n.dataset.v4));
   return ['item','fabric','pillows','upgrades','bed'].filter(k=>have.has(k)).concat(['review']);
+}
+/* Zach 11/2: a way out of an item that was started by mistake — a small Cancel at the bottom left, under Next.
+   An item not yet added to the order is removed (the order goes back to its review, or to a fresh blank item if it
+   was the only one). An item already on the order and opened with Edit just goes back to the review. */
+function v4Lower(it, items, back){
+  const onOrder = V4.added.has(V4.cur);
+  const others = items.some(x=>x!==it && V4.added.has(v4Uid(x)));
+  const started = !!document.getElementById(`${V4.cur}-brand`).value || !!document.getElementById(`${V4.cur}-style`).value.trim();
+  const cancel = onOrder ? `<button type="button" class="cancel" data-v4cancel="1">Back to order</button><button type="button" class="cancel del" data-v4cancel="del">Delete item</button>`
+    : (started || others) ? `<button type="button" class="cancel" data-v4cancel="1">Cancel item</button>` : '';
+  return cancel || back ? `<div class="v4-low">${cancel}${back}</div>` : '';
+}
+function v4Cancel(del){
+  const it = v4Item(V4.cur); if (!it) return;
+  const uid = V4.cur;
+  /* Zach 11/2: Delete item next to Back to order takes a piece that's already on the order off entirely */
+  if (V4.added.has(uid) && !del){ V4.step = 'review'; v4Render(); return; }
+  if (del && !window.confirm('Take this item off the order?')) return;
+  V4.added.delete(uid);
+  it.querySelectorAll('.missing').forEach(n=>n.classList.remove('missing'));
+  it.remove(); renumber(); updateLead(); queuePage2();
+  const left = v4Items();
+  if (!left.length){ addItem(); return v4Go('item', true); }      // nothing else on the order: start clean
+  V4.cur = v4Uid(left[left.length-1]);
+  v4Go(left.some(x=>V4.added.has(v4Uid(x))) ? 'review' : 'item', true);
 }
 function v4Render(){
   const items = v4Items();
@@ -2020,7 +2050,7 @@ function v4Render(){
   const back = review ? `<button type="button" class="back" data-v4go="item">‹ Back to item ${n}</button>` : (i>0 ? `<button type="button" class="back" data-v4go="${steps[i-1]}">‹ Back</button>` : '');
   const nav = review
     ? `<button type="button" data-v4add="1">+ Add another item</button><button type="button" class="primary" onclick="tryPrint()">Print</button>${back}`
-    : `<button type="button" class="primary" data-v4go="${steps[i+1]}">${last ? 'Add to Order' : 'Next'}</button>${back}`;
+    : `<button type="button" class="primary" data-v4go="${steps[i+1]}">${last ? 'Add to Order' : 'Next'}</button>` + v4Lower(it, items, back);
   let navEl = document.getElementById('v4nav'); if (!navEl){ navEl = el('div',{id:'v4nav'}); itemsEl.after(navEl); }
   const stillRed = !review && it.querySelector('.missing');
   navEl.innerHTML = `<div id="v4msg" class="v4-msg no-print"${stillRed ? '' : ' hidden'}>${stillRed ? 'Fill in the highlighted fields before moving on.' : ''}</div><div class="v4-nav no-print">${nav}</div>`;
@@ -2139,12 +2169,13 @@ function v4StepOK(){
 /* keep the running list in view: jump to it on a new/edited item; between steps only scroll if the step went off-screen */
 function v4Go(step, top){
   V4.step = step; v4Render();
-  if (step==='review') checkpoint();   // an item was just added to the order: save a draft to SIMON, silently
+  if (step==='review'){ V4.added.add(V4.cur); checkpoint(); }   // an item was just added to the order: save a draft to SIMON, silently
   const t = top ? document.getElementById('v4sum') : document.getElementById('v4bar'), r = t.getBoundingClientRect();
   if (top || r.top < 60 || r.top > innerHeight - 120) window.scrollTo({top: r.top + scrollY - 70, behavior:'smooth'});
 }
 document.addEventListener('click', e=>{
-  const t = e.target.closest && e.target.closest('[data-v4go],[data-v4edit],[data-v4add]'); if (!t) return;
+  const t = e.target.closest && e.target.closest('[data-v4go],[data-v4edit],[data-v4add],[data-v4cancel]'); if (!t) return;
+  if (t.dataset.v4cancel) return v4Cancel(t.dataset.v4cancel==='del');
   if (t.dataset.v4go==='review' && !document.getElementById(`${V4.cur}-brand`).value){
     const n = document.getElementById(`${V4.cur}-style`); n.classList.add('missing'); const f = n.closest('.f'); if (f) f.classList.add('err');
     n.focus(); return;
@@ -2366,6 +2397,7 @@ async function restoreOrder(o, key){
   }
   updateLead();
   ORDER.id = o.id; ORDER.token = key; byId('order-no').textContent = `Order ${o.id}`;
+  V4.added = new Set(v4Items().map(v4Uid));   // reopened pieces are already on the order
   V4.cur = ''; V4.step = 'review'; v4Render(); queuePage2();
   saveMsg(missing ? 'bad' : 'ok', missing
     ? `Reopened ${o.id}. This order was saved before options were stored — re-pick the options on ${missing} piece${missing>1?'s':''} before printing.`
