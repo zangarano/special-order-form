@@ -295,7 +295,7 @@ const BRANDS = {
   ],
   'Archbold': [
     {id:'collection', label:'Collection', type:'select', span:2,
-      options:['','2 West','Alder 2 West','Alder Shaker','Chest Bed','Emmerson','Heritage','Pine','Portland','Shaker']},
+      options:['','2 West','Alder 2 West','Alder Shaker','Chest Bed','Emmerson','Heritage','Pine','Portland','Shaker','Amish Essentials','AE Modern']},
     {id:'size', label:'Bed size', type:'select', span:2, options:['N/A','Twin','Twin XL','Full','Queen','King','Cal King']},
     {id:'finish', label:'Finish / stain', span:6},
     {id:'hardware', label:'Hardware', span:6},
@@ -306,7 +306,7 @@ const BRANDS = {
 const PRETTY = {
   'LOUNGE-SEAT':'Lounge Seat','SUPPORT-SEAT':'Support Seat','BLDOWN-SEAT':'Blend Down Seat','PREMIER-SEAT':'Premier Seat',
   'LOUNGE-BACK':'Lounge Back','BLDOWN-BACK':'Blend Down Back','PREMIER-BACK':'Premier Back',
-  'NONE':'No Nailhead','ABNAIL':'Antique Brass Nailhead','NKNAIL':'Nickel Nailhead','OBNAIL':'Oiled Bronze Nailhead',
+  'NONE':'No Nailhead','NONE - One Finish':'No two-tone','NONE - Wood Seat':'No fabric (wood seat)','ABNAIL':'Antique Brass Nailhead','NKNAIL':'Nickel Nailhead','OBNAIL':'Oiled Bronze Nailhead',
 };
 function pretty(o){
   if (PRETTY[o]) return PRETTY[o];
@@ -446,7 +446,7 @@ if (HAS_SKUS) for (const k in SKUS){ const e = SKUS[k];
 const OPT_LABELS = {ContourSeat:'Contour cushion', SwivelBase:'Swivel base', Handle:'Handle',
   RemoteChoice:'Remote', WirelessRemote:'Remote', PowerBundle:'Power bundle', BassettCushio:'Seat cushion', BassettBack:'Back cushion',
   BassettNail:'Nailhead', BassettFeet:'Feet finish',
-  Finish:'Finish', Hardware:'Hardware', Fabric:'Headboard fabric',
+  Finish:'Finish', TwoTone:'Two-tone finish', Hardware:'Hardware', Fabric:'Headboard fabric',
   EngCushion:'Seat cushion', EngFrame:'Frame'};
 /* England leather covers carry a tier word instead of a grade letter */
 const isTier = g => /^(Prime|Choice|Select)$/.test(g||'');
@@ -484,6 +484,8 @@ function skuFields(key, uid){
   if (e.b==='Archbold'){
     /* a bed SKU hands the item to the bed builder, which asks for the remaining parts */
     if (bedContexts(key).length) return bedBuilder(key, e, uid);
+    /* an Amish Essentials table top hands the item to the table builder */
+    if (aeTableKind(key)) return aeTableBuilder(key, e, uid);
     archboldFields(key, e, uid).forEach(f=>g.appendChild(f)); return g;
   }
   if (e.c !== undefined){
@@ -607,11 +609,14 @@ function archboldFields(key, e, uid){
   else if (anySize) out.push(field({id:'size', label:'Bed size', type:'select', span:2,
     options: [''].concat(ARCH_SIZES)}, uid));   // fits any size — the rep must say which
 
-  const pick = (t, span) => out.push(field({id:`opt-${t}`, label:OPT_LABELS[t], type:'select', span,
+  /* Amish Essentials dining (11/9): Fabric is a chair/stool/bench seat, not a headboard; two-tone = 2nd color on apron/base/frame */
+  const ae = /^(Amish Essentials|AE Modern)$/.test(col);
+  const pick = (t, span, label) => out.push(field({id:`opt-${t}`, label:label||OPT_LABELS[t], type:'select', span,
     options: [''].concat(o[t])}, uid));
   if (o.Finish)  pick('Finish', 2);
+  if (o.TwoTone) pick('TwoTone', 2);
   if (o.Hardware)   pick('Hardware', 2);
-  if (o.Fabric)  pick('Fabric', 2);
+  if (o.Fabric)  pick('Fabric', 2, ae ? 'Seat fabric' : '');
   /* Slats and spacer kits ship unfinished, so they take nothing. Anything else with no
      option data keeps free text rather than silently offering nothing. */
   if (!o.Finish && !ARCH_NO_OPTS.test(e.d)){
@@ -845,6 +850,149 @@ function bedBuilder(key, e, uid){
       el('td',{class:'mono',text:orderCode(k)}), el('td',{text:(SKUS[k]||{}).d||k})])));
     b.appendChild(t);
     return b;
+  }
+  render();
+  return wrap;
+}
+
+/* ---------- Amish Essentials table builder (Zach 11/9; data from the AE Maple Dining 2026-27 list; no prices) ----------
+   Typing an AE table top (or picking one) hands the item to this builder, like the bed builder: it asks only for the
+   parts that legally go with that top — leg sets for leg tops (29" dining or 35" counter), leaves + center support
+   for the 42x72 extension tops, a compatible pedestal for round tops, trestle + matching stretcher for trestle tops,
+   the Anna/Callie leg for modern leg tops, a modern trestle for modern trestle tops, and the Camila base for the
+   modern round. Finish comes from the top; two-tone (where the top takes it) puts the 2nd color on the apron and base.
+   Order # = base + finish (+ -2nd color on the top and leaves); base parts take the 2nd color when two-tone. */
+const AE_T = {
+  legs29:['400L01','400L02','400L03','400L05'], legs35:['436L01','436L02','436L03','436L05'],
+  ext:['4214272','4224272','4234272'], extLeaf:'4214218', ctr29:'420L01', ctr35:'426L01',
+  round:{'4074242T':42,'4174242T':42,'4074848T':48,'4174848T':48,'4046060T':60,'4146060T':60},
+  peds:{'4064242B':[42,48],'4074242B':[42],'4074848B':[42,48],'4084242B':[42,48],'4094242B':[42,48],'4044848B':[48,60]},
+  trestleTop:{'4323655':54,'4323654':54,'4324273':72,'4324272':72},
+  trestles:{'432B01':{54:'432B0154S',72:'432B0172S'},'432B02':{54:'432B0254S',72:'432B0272S'}},
+  trestleLeaf:{'4324273':'4324212'},
+  anna:['4013654','4013655','4113654','4113666'], callie:['4023654','4023655','4123654','4123666'],
+  mtres:['4033672T','4034296T'], mtresBase:['400B01','400B02','400B03'],
+  mround:{'4034848T':'4034848B','4134848T':'4134848B'},
+};
+function aeTableKind(k){
+  if (/^4[01][123](3648|4260|4272)$/.test(k) || k==='4113632' || k==='4013632') return 'leg';
+  if (AE_T.ext.includes(k)) return 'ext';
+  if (AE_T.round[k]) return 'round';
+  if (AE_T.trestleTop[k]) return 'trestle';
+  if (AE_T.anna.includes(k) || AE_T.callie.includes(k)) return 'modleg';
+  if (AE_T.mtres.includes(k)) return 'mtres';
+  if (AE_T.mround[k]) return 'mround';
+  return '';
+}
+const aePart = k => ((SKUS[k]||{}).d||k).replace(/^(Amish Essentials|AE Modern)\s+/,'');
+const aeLegs = k => aePart(k).replace(/ Leg Set$/,'').replace(/^(\d\d)" (.*)$/,'$2, $1"');   // 436L05 -> Twist, 35"
+function aeTableBuilder(key, e, uid){
+  const wrap = el('div'), controls = el('div',{class:'grid bed-controls tbl-controls'}), out = el('div');
+  wrap.append(controls, out);
+  const kind = aeTableKind(key), o = e.o || {};
+  const st = {type:'Complete table', h:'', legs:'', leaves:'', ped:'', tres:'', extra:'', base:'', finish:'', tt:''};
+  const descEl = () => document.getElementById(`${uid}-desc`), dimsEl = () => document.getElementById(`${uid}-dims`);
+  function sel(k, label, opts, span, blank=true){
+    if (opts.length===1) blank = false;
+    if (!opts.some(x=>x[0]===st[k])) st[k] = (!blank && opts.length) ? opts[0][0] : '';
+    const w = el('div',{class:`f s${span}`}), s = el('select',{id:`${uid}-tbl-${k}`});
+    if (blank) s.appendChild(el('option',{value:'',text:''}));
+    opts.forEach(([v,t])=>s.appendChild(el('option',{value:v,text:t})));
+    s.value = st[k]; if (opts.length===1) s.classList.add('locked');
+    s.addEventListener('change',()=>{ st[k]=s.value; render(); });
+    w.append(el('label',{for:s.id,text:label}), s); controls.appendChild(w);
+  }
+  const skuOpt = k => [k, `${aePart(k).replace(/^(29|35)" /,'')} (${k})`];
+  const nums = (aePart(key).match(/^(\d\d)x(\d\d)/) || []).slice(1).map(Number);
+  function render(){
+    controls.innerHTML=''; out.innerHTML='';
+    sel('type','Build as', [['Complete table','Complete table'],['This piece only','This piece only']], 3, false);
+    if (st.type==='This piece only'){
+      const g = el('div',{class:'grid'}); archboldFields(key, e, uid).forEach(f=>g.appendChild(f)); out.appendChild(g);
+      descEl().value = e.d; dimsEl().value = ''; return;
+    }
+    let parts = [key], base = [], leafParts = [], lines = [['Top', aePart(key)]], ready = false, size = '', H = '', note = '';
+    if (kind==='leg' || kind==='ext'){
+      sel('h','Height', [['29','Dining height (29")'],['35','Counter height (35")']], 2);
+      if (st.h){
+        sel('legs','Legs', (st.h==='35' ? AE_T.legs35 : AE_T.legs29).map(skuOpt), 2);
+        if (kind==='ext') sel('leaves','Leaves', [['1','2 leaves (9 ft)'],['2','4 leaves (12 ft)']], 2);
+        if (st.legs && (kind!=='ext' || st.leaves)){
+          base = [st.legs];
+          if (kind==='ext'){ leafParts = Array(+st.leaves).fill(AE_T.extLeaf); base.push(st.h==='35' ? AE_T.ctr35 : AE_T.ctr29); }
+          lines.push(['Legs', aeLegs(st.legs)]);
+          if (kind==='ext') lines.push(['Leaves', `${+st.leaves*2} × 18" — opens to ${72 + +st.leaves*36}"`]);
+          else if (/Drop Leaf/.test(e.d)) lines.push(['Leaves', 'Drop leaves — opens to 52"' + (/18" Leaf/.test(e.d) ? ', plus 1 × 18" (included)' : '')]);
+          else if (/18" Leaf/.test(e.d)) lines.push(['Leaves', `1 × 18" (included) — opens to ${nums[1]+18}"`]);
+          H = st.h; ready = true;
+        }
+      }
+    }
+    else if (kind==='round'){
+      const d = AE_T.round[key];
+      sel('ped','Pedestal', Object.keys(AE_T.peds).filter(p=>AE_T.peds[p].includes(d)).map(skuOpt), 3);
+      if (st.ped){ base = [st.ped]; lines.push(['Pedestal', aePart(st.ped)]);
+        if (/18" Leaf/.test(e.d)) lines.push(['Leaves', '1 × 18" (included)']); ready = true; }
+    }
+    else if (kind==='trestle'){
+      const len = AE_T.trestleTop[key];
+      sel('tres','Trestle', Object.keys(AE_T.trestles).map(skuOpt), 3);
+      if (AE_T.trestleLeaf[key]) sel('extra','Extra leaves', [['no','No extra leaves'],['yes','Add 2 more × 12" leaves']], 3);
+      if (st.tres && (!AE_T.trestleLeaf[key] || st.extra)){
+        base = [st.tres, AE_T.trestles[st.tres][len]];
+        lines.push(['Trestle', `${aePart(st.tres)} with ${len}" stretcher`]);
+        if (/Lvs/.test(e.d)) lines.push(['Leaves', st.extra==='yes' ? '4 × 12" (2 included + 2 extra)' : '2 × 12" (included)']);
+        if (st.extra==='yes') leafParts = [AE_T.trestleLeaf[key]];
+        ready = true;
+      }
+    }
+    else if (kind==='modleg'){
+      const leg = AE_T.anna.includes(key) ? '400L08' : '400L09';
+      sel('base','Legs', [skuOpt(leg)], 3, false);
+      base = [leg]; lines.push(['Legs', aeLegs(leg)]);
+      if (/Leaf|Lvs/.test(e.d)) lines.push(['Leaves', /2-12/.test(e.d) ? '2 × 12" (included)' : '1 × 12" (included)']);
+      ready = true;
+    }
+    else if (kind==='mtres'){
+      sel('base','Trestle', AE_T.mtresBase.map(skuOpt), 3);
+      if (st.base){ base = [st.base]; lines.push(['Trestle', aePart(st.base)]); ready = true; }
+    }
+    else if (kind==='mround'){
+      const b = AE_T.mround[key];
+      sel('base','Base', [skuOpt(b)], 3, false); base = [b]; lines.push(['Base', aePart(b)]);
+      if (/Lvs/.test(e.d)) lines.push(['Leaves', '2 × 12" (included)']); ready = true;
+    }
+    parts = parts.concat(leafParts, base);
+    /* finish from the top; two-tone only where the top takes it */
+    if (o.Finish) sel('finish','Finish', o.Finish.map(x=>[x, optName(x)]), 2);
+    if (o.TwoTone) sel('tt','Two-tone (apron & base)', o.TwoTone.map(x=>[x, /^NONE/.test(x) ? 'No two-tone' : optName(x)]), 2);
+    const tt = st.tt && !/^NONE/.test(st.tt) ? st.tt : '';
+    if (st.finish) lines.push(['Finish', optName(st.finish)]);
+    if (tt) lines.push(['Two-tone', `${optName(tt)} apron & base`]);
+    const round = AE_T.round[key] || (AE_T.mround[key] ? 48 : 0);
+    size = round ? `${round}" round` : nums.length ? `${nums[0]}"W × ${nums[1]}"L${H ? ` × ${H}"H` : ''}` : '';
+    lines.push(['Size', size]);
+    const tb = aePart(key).replace(/ (Ped |Ext )?Top.*$/,'').replace(/ Rect$/,' Rectangle').replace(' Modern Trestle',' Trestle');
+    const title = `${/^AE Modern/.test(e.d) ? 'AE Modern' : 'Amish Essentials'} ${tb}${kind==='round' ? ' Pedestal' : kind==='ext' ? ' Extension' : ''}${st.h==='35' ? ' Counter-Height' : ''} Table`;
+    if (ready){
+      const b = el('div',{class:'bed-block tbl-block'}); b.dataset.parts = JSON.stringify(parts); b.dataset.kind = 'table';
+      b.appendChild(el('div',{class:'bed-title',text:title}));
+      const dl = el('div',{class:'bed-lines'});
+      lines.filter(l=>l[1]).forEach(([k,v])=>dl.append(el('span',{class:'k',text:k}), el('span',{text:v})));
+      b.appendChild(dl);
+      if (note) b.appendChild(el('div',{class:'bed-note',text:note}));
+      const qty = new Map(); parts.forEach(k=>qty.set(k,(qty.get(k)||0)+1));
+      const isTop = k => k===key || leafParts.includes(k);
+      const oc = k => { if (!st.finish) return k+'·'; const f = code(st.finish), t = tt ? code(tt) : '';
+        return isTop(k) ? k + f + (t && ((SKUS[k]||{}).o||{}).TwoTone ? '-'+t : '') : k + (t || f); };
+      const t = el('table',{class:'bed-parts'});
+      t.appendChild(el('tr',{},[el('th',{text:'Qty'}),el('th',{text:'Order #'}),el('th',{text:'Part'})]));
+      [...qty.keys()].forEach(k=>t.appendChild(el('tr',{},[el('td',{text:String(qty.get(k))}),
+        el('td',{class:'mono',text:oc(k)}), el('td',{text:aePart(k)})])));
+      b.appendChild(t); out.appendChild(b);
+    }
+    descEl().value = ready ? title : e.d;
+    dimsEl().value = '';
   }
   render();
   return wrap;
@@ -1578,6 +1726,7 @@ const ROOMS = ['Living Room','Family Room','Basement','Bedroom','Office','Dining
 function roomFor(brand, k){
   if (brand && brand!=='Archbold') return 'Living Room';
   const d = (SKUS[k]||{}).d || '';
+  if (/^(Amish Essentials|AE Modern) /.test(d)) return 'Dining Room';
   if (/^7\d{4}/.test(k) && /Pantry|Cabinet/.test(d)) return 'Kitchen';
   if (/Bookcase/.test(d) && !/Headboard/.test(d)) return 'Living Room';
   if (!/Chest Bed/.test(d) && /Desk|Return|File|Credenza|Hutch|Workstation|Writing|Universal Pedestal|2 Door Cabinet/.test(d)) return 'Office';
@@ -1964,7 +2113,7 @@ addItem();
    Item → Fabric/Finish → Pillows → Upgrades (or Bed) → Add to Order. Steps a piece doesn't take are skipped.
    A piece from the same collection as one already on the order starts with that piece's choices (the set fill
    for upholstery; Archbold finish/hardware below). Page 1 prints a written summary, page 2 the drawings. */
-const ARCH_COLLECTIONS = ['Alder 2 West','Alder Shaker','2 West','Chest Bed','Emmerson','Heritage','Pine','Portland','Shaker'];
+const ARCH_COLLECTIONS = ['Alder 2 West','Alder Shaker','2 West','Chest Bed','Emmerson','Heritage','Pine','Portland','Shaker','Amish Essentials','AE Modern'];
 function archCollection(desc, uid){
   desc = String(desc||'').trim();
   const cs = document.getElementById(`${uid}-collection`);
@@ -2039,7 +2188,7 @@ function v4Render(){
   const brand = document.getElementById(`${V4.cur}-brand`).value, desc = document.getElementById(`${V4.cur}-desc`).value;
   const sku = document.getElementById(`${V4.cur}-style`).value.trim();
   const fabricTitle = brand==='Archbold' ? 'Pick the finish' : (/leather/i.test((document.getElementById(`${V4.cur}-coverType`)||{}).value||'') ? 'Pick the leather' : 'Pick the fabric');
-  const title = V4.step==='fabric' ? fabricTitle : V4_TITLES[V4.step];
+  const title = V4.step==='fabric' ? fabricTitle : V4.step==='bed' && it.querySelector('.tbl-controls') ? 'Build the table' : V4_TITLES[V4.step];
   const i = steps.indexOf(V4.step), n = items.indexOf(it)+1;
   const ctx = review ? `${items.length} item${items.length>1?'s':''} on this order`
     : `Item ${n}` + (brand || desc ? ' · ' + esc([brand, desc].filter(Boolean).join(' ')) + (sku ? ' · ' + esc(sku) : '') : '');
@@ -2078,6 +2227,15 @@ function v4Describe(uid){
     /* beds read as plain speech: "Flat Panel headboard and footboard, 3-drawer and 6-drawer pedestals, standard rails, wood knobs" */
     const B = {};
     bf.querySelectorAll('.bed-lines .k').forEach(k=>{ const v = k.nextSibling && k.nextSibling.textContent.trim(); if (v) B[k.textContent] = v; });
+    if (bf.querySelector('.tbl-block')){
+      /* tables: "Latte finish, White two-tone apron & base" / "Twist legs, 4 × 18" leaves" */
+      if (B.Finish) l2.push(`${B.Finish} finish`);
+      if (B['Two-tone']) l2.push(`${B['Two-tone'].replace(/ apron & base$/,'')} two-tone apron & base`);
+      if (B.Legs) l3.push(`${B.Legs.replace(/, \d\d"$/,'')} legs${/35"$/.test(B.Legs) ? ', counter height' : ''}`);
+      ['Pedestal','Trestle','Base'].forEach(k=>{ if (B[k]) l3.push(B[k]); });
+      if (B.Leaves) l3.push(`leaves: ${B.Leaves}`);
+      return [l2.join(', '), l3.join(', ')];
+    }
     if (B.Finish) l2.push(`${B.Finish} finish`);
     if (B['Headboard fabric']) l2.push(`${B['Headboard fabric']} headboard fabric`);
     const style = (v, w) => (v||'').replace(new RegExp(`\\s*${w}$`, 'i'), '').trim();
@@ -2105,6 +2263,8 @@ function v4Describe(uid){
   if (coverF){ used.add(coverF); const v = get(coverF); if (v) l2.push(`${v4Fabric(v, brand)} ${hasPillows ? 'body ' : ''}${(type || 'fabric').toLowerCase()}`); }
   byLab(/^(finish|finish \/ stain)$/i).forEach(f=>{ used.add(f); const v = get(f); if (v) l2.push(`${v4NoCode(v)} finish`); });
   byLab(/^headboard fabric$/i).forEach(f=>{ used.add(f); const v = get(f); if (v) l2.push(`${v4NoCode(v)} headboard fabric`); });
+  byLab(/^two-tone finish$/i).forEach(f=>{ used.add(f); const v = get(f); if (!v4Skip(v)) l2.push(`${v4NoCode(v)} two-tone`); });
+  byLab(/^seat fabric$/i).forEach(f=>{ used.add(f); const v = get(f); if (!v4Skip(v)) l2.push(`${v4NoCode(v)} seat fabric`); });
   const pv = byLab(/pillow/i).map(f=>{ used.add(f); return get(f); });
   if (pv.filter(Boolean).length){
     if (pv.every(v=>v===pv[0])) l2.push(`${v4Fabric(pv[0], brand)} pillows`);
